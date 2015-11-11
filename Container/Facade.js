@@ -27,9 +27,16 @@ export default class Facade extends Container {
     static registerServiceProvider(providerClass:ServiceProvider) {
         var application = this.getInstance();
 
-        this.booted
-            ? application.resolve(providerClass).boot()
-            : this.providers.push(providerClass);
+        var provider = application.resolve(providerClass);
+        provider.register();
+
+        if (this.booted) {
+            provider.boot();
+
+        } else {
+
+            this.providers.push(providerClass);
+        }
 
         return this;
     }

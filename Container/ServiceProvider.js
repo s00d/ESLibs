@@ -20,6 +20,11 @@ export default class ServiceProvider {
     }
 
     /**
+     * Register method
+     */
+    register() {}
+
+    /**
      * Boot event
      */
     @Abstract boot() {}
