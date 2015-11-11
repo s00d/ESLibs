@@ -7,8 +7,28 @@ import OptionsBuilder from "/Request/OptionsBuilder";
 /**
  *
  */
-@Inject('config')
 export default class Ajax {
+    /**
+     * @type {null}
+     */
+    static csrf = null;
+
+    /**
+     * @param token
+     * @returns {Ajax}
+     */
+    static setCsrfToken(token) {
+        this.csrf = token;
+        return this;
+    }
+
+    /**
+     * @returns {string}
+     */
+    static getCsrfToken() {
+        return this.csrf;
+    }
+
     /**
      * @type {Dispatcher}
      */
@@ -21,10 +41,9 @@ export default class Ajax {
 
     /**
      * @constructor
-     * @param config
      */
-    constructor(config:Config) {
-        this.csrf = config.get('csrf');
+    constructor() {
+        this.csrf = this.constructor.getCsrfToken();
     }
 
     /**

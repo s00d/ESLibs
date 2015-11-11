@@ -1,5 +1,3 @@
-import Config from "/App/Config";
-
 /**
  *
  */
@@ -34,7 +32,6 @@ export default class Carbon {
             return string;
 
         } else if (string instanceof Date) {
-            console.log(string);
             return new Carbon(string.getTime());
 
         } else if (string instanceof Object) {
