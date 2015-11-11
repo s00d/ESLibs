@@ -146,13 +146,15 @@ export default class Model {
     static create(attributes = {}) {
         this.bootIfNotBooted();
 
-        attributes = this.dispatcher.fire('creating', attributes);
-
         var model = new this(attributes);
 
-        model = this.dispatcher.fire('created', model);
+        if (!this.dispatcher.fire('creating', attributes)) {
+            return new this(attributes);
+        }
 
         model.save();
+
+        this.dispatcher.fire('created', model);
 
         return model;
     }

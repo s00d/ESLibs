@@ -34,22 +34,21 @@ export default class Dispatcher {
     /**
      * @param name
      * @param args
-     * @returns {Array}
+     * @returns {boolean}
      */
     fire(name:String, ...args) {
-        var handlers    = this.getHandlers(name);
-        var optionsArgs = args;
+
+        this.getHandlers(name);
+
+        var handlers = this.getCompatibleEvents(name);
 
         for (var i = 0; i < handlers.length; i++) {
-            var eventResponse = handlers[i].fire(...optionsArgs);
-            if (typeof eventResponse !== 'undefined') {
-                optionsArgs = eventResponse;
+            if (handlers[i].fire(...(args.concat([name]))) === false) {
+                return false;
             }
         }
 
-        return optionsArgs.length === 1
-            ? optionsArgs[0]
-            : optionsArgs;
+        return true;
     }
 
     /**
@@ -60,6 +59,35 @@ export default class Dispatcher {
         if (!this.events[name]) {
             this.events[name] = [];
         }
+
         return this.events[name];
+    }
+
+    /**
+     * @param name
+     * @returns {Array}
+     */
+    getCompatibleEvents(name) {
+        var compatible = [];
+
+        Object.keys(this.events).forEach(event => {
+            var regexp = Dispatcher.createHandlerNameRegexp(event);
+            if (name.match(regexp)) {
+                compatible = compatible.concat(this.events[event]);
+            }
+        });
+
+        return compatible;
+    }
+
+    /**
+     * @param name
+     * @returns {RegExp}
+     */
+    static createHandlerNameRegexp(name) {
+        name = name
+            .replace(/[\-\[\]\/\{\}\(\)\+\?\.\\\^\$\|]/g, "\\$&")
+            .replace('*', '(.*?)');
+        return new RegExp(`^${name}$`, 'gi');
     }
 }
