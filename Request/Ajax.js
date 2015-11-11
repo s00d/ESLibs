@@ -51,11 +51,13 @@ export default class Ajax {
      * @param {string} url
      * @param {{}} args
      * @param {{}} options
-     * @returns {*}
+     * @returns {Response|null}
      */
     @Inject('app')
     async request(app:Facade, url, args = {}, options = {}) {
-        this.events.fire('prepare', url, args, options);
+        if (!this.events.fire('prepare', url, args, options)) {
+            return null;
+        }
 
         var builder =
                 (new OptionsBuilder(url, args, options))
@@ -64,12 +66,16 @@ export default class Ajax {
         var fetchOptions    = builder.getOptions();
         var fetchUrl        = builder.getUrl();
 
-        this.events.fire('before', fetchUrl, fetchOptions);
+        if (!this.events.fire('before', fetchUrl, fetchOptions)) {
+            return null;
+        }
 
         try {
             var result = await fetch(fetchUrl, fetchOptions);
+
         } catch (e) {
-            console.error(e);
+
+            throw new Error(e);
         }
 
         if (result.status >= 400) {
