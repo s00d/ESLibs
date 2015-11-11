@@ -1,13 +1,10 @@
-import Serialize from "/Support/Serialize";
-
 /**
  * @returns {Function}
  */
 export default function Abstract(context, name, descriptor) {
-    var declarationName = Serialize.objectToString(context) + '.' + name;
-
     descriptor.value = function() {
-        throw new ReferenceError('Can not call an abstract method ' + declarationName);
+        throw new ReferenceError(`Can not call an abstract method ${this.constructor.name}.${name}() ` +
+            `declared in ${context.constructor.name} class.`);
     };
 
     return descriptor;
