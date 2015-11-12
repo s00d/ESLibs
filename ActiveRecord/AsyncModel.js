@@ -38,6 +38,9 @@ export default class AsyncModel extends Model {
         var result = [];
 
         try {
+            if (!this.ajax) {
+                throw new Error('Ajax driver not defined');
+            }
             var response = await (await this.ajax.get(this.request[request], {}, {
                 title: title
             })).json();
