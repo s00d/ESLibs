@@ -9,7 +9,7 @@ import OptionsBuilder from "/Request/OptionsBuilder";
  */
 export default class Ajax {
     /**
-     * @type {null}
+     * @type {null|string}
      */
     static csrf = null;
 
@@ -43,7 +43,7 @@ export default class Ajax {
      * @constructor
      */
     constructor() {
-        this.csrf = this.constructor.getCsrfToken();
+        this.csrf = Ajax.getCsrfToken();
     }
 
     /**

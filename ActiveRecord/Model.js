@@ -149,10 +149,10 @@ export default class Model {
         var model = new this(attributes);
 
         if (!this.dispatcher.fire('creating', attributes)) {
-            return new this(attributes);
+            return model;
         }
 
-        model.save();
+        this.collection.push(model);
 
         this.dispatcher.fire('created', model);
 
