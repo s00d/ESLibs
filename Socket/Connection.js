@@ -118,7 +118,7 @@ export default class Connection {
         return new Promise((resolve, reject) => {
             // Response timeout
             var errorTimeout = setTimeout(() => {
-                return reject(new Error('Socket response timeout for requestId ' + id));
+                return reject(new Error(`Socket response timeout for requestId ${id}`, 500));
             }, 5000);
 
             var event = this.events.listen('message', data => {

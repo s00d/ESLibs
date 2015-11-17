@@ -3,7 +3,7 @@
  */
 export default function Abstract(context, name, descriptor) {
     descriptor.value = function() {
-        throw new ReferenceError(`Can not call an abstract method ${this.constructor.name}.${name}() ` +
+        throw new Error(`Can not call an abstract method ${this.constructor.name}.${name}() ` +
             `declared in ${context.constructor.name} class.`);
     };
 

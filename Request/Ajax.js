@@ -75,12 +75,12 @@ export default class Ajax {
 
         } catch (e) {
 
-            throw new Error(e);
+            throw new Error(`Error while fetching ${fetchUrl}`, 500, e);
         }
 
         if (result.status >= 400) {
             this.events.fire('error', result);
-            throw new Error(result.statusText);
+            throw new Error(result.statusText, result.status);
         }
 
         this.events.fire('after', result);

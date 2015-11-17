@@ -146,11 +146,13 @@ export default class Model {
     static create(attributes = {}) {
         this.bootIfNotBooted();
 
-        var model = new this(attributes);
 
-        if (!this.dispatcher.fire('creating', attributes)) {
-            return model;
+        attributes = this.dispatcher.fire('creating', attributes);
+        if (!attributes) {
+            return false;
         }
+
+        var model = new this(attributes);
 
         this.collection.push(model);
 
@@ -263,7 +265,7 @@ export default class Model {
      * @returns {boolean}
      */
     has(attribute) {
-        return !!this.original[attribute];
+        return typeof this.original[attribute] !== 'undefined';
     }
 
     /**
@@ -333,29 +335,6 @@ export default class Model {
     //
 
     /**
-     * Sync values, add in collections if not exists and return updated values
-     *
-     * @returns {{}}
-     */
-    save() {
-        var fields = this.updated;
-
-        if (!this.constructor.dispatcher.fire('saving', this)) {
-            return fields;
-        }
-
-        this.sync();
-
-        if (!this.saved()) {
-            this.constructor.collection.push(this);
-        }
-
-        this.constructor.dispatcher.fire('saved', this);
-
-        return fields;
-    }
-
-    /**
      * Return true if model exists in collection
      *
      * @returns {boolean}
@@ -410,7 +389,7 @@ export default class Model {
     /**
      * Convert to Object instance
      *
-     * @return {Array}
+     * @return {{}}
      */
     toObject() {
         return JSON.parse(this.toJson());

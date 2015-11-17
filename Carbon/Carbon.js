@@ -28,7 +28,10 @@ export default class Carbon {
      * @returns {Carbon}
      */
     static parse(string) {
-        if (string instanceof Carbon) {
+        if (typeof string === 'undefined' || string === null) {
+            return Carbon.now();
+
+        } else if (string instanceof Carbon) {
             return string;
 
         } else if (string instanceof Date) {

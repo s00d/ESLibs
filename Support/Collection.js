@@ -110,12 +110,24 @@ export default class Collection {
      */
     remove(callback:Function) {
         var items = [];
-        for (var i = 0; i < this.elements.length; i++) {
+        var removed = [];
+        var i = 0;
+
+        for (i = 0; i < this.elements.length; i++) {
             if (!callback(this.elements[i])) {
                 items.push(this.elements[i]);
+            } else {
+                removed.push(this.elements[i]);
             }
         }
-        return new this.constructor(items);
+
+        this.elements = items;
+
+        for (i = 0; i < removed.length; i++) {
+            this.events.fire(this.constructor.E_REMOVE, removed[i]);
+        }
+
+        return this;
     }
 
     /**
@@ -157,20 +169,24 @@ export default class Collection {
         }
 
         return this.find(item => {
+            var original = item[key];
+            if (typeof original === 'function') {
+                original = original.apply(item, []);
+            }
             switch (op) {
                 case '>':
-                    return item[key] > value;
+                    return original > value;
                 case '<':
-                    return item[key] < value;
+                    return original < value;
                 case '>=':
-                    return item[key] >= value;
+                    return original >= value;
                 case '<=':
-                    return item[key] <= value;
+                    return original <= value;
                 case '<>':
                 case '!=':
-                    return item[key] != value;
+                    return original != value;
                 default:
-                    return item[key] == value;
+                    return original == value;
             }
         });
     }

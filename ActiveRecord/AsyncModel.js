@@ -71,11 +71,11 @@ export default class AsyncModel extends Model {
             if (response.result) {
                 result = response.result;
             } else {
-                throw new Error('JsonRpc format error.');
+                throw new Error('JsonRpc format error.', -32700);
             }
 
         } catch (e) {
-            console.error(`Can not load ${this.name}@load[${this.request[request]}]: ${e} \n${e.stack}`);
+            console.error(e);
         }
 
         if (flush) { this.collection.remove(i => true); }
@@ -96,15 +96,47 @@ export default class AsyncModel extends Model {
 
         try {
             if (this.dirty()) {
+                var attributes = this.constructor.dispatcher.fire('saving', this.attributes);
+                if (!attributes) {
+                    return false;
+                }
+
                 var result = await (
-                    await ajax.post(route, this.attributes, {title: title})
+                    await ajax.post(route, attributes, {title: title})
                 ).json();
+
+                this.constructor.dispatcher.fire('saved', result);
             }
 
         } catch (e) {
-            console.error(`Can not save ${this.constructor.name}@save[${route}]: ${e} \n${e.stack}`);
+            console.error(e);
+        }
+    }
+
+    /**
+     * @param field
+     * @param title
+     */
+    async take(field = 'id', title = null) {
+        var route  = this.constructor.getRoute('take').replace('{id}', this[field]);
+        var ajax   = AsyncModel.getAjaxAdapter();
+        var result = {};
+
+        try {
+            var response = await (
+                await ajax.get(route, this.attributes, {title: title})
+            ).json();
+
+            if (response.result) {
+                result = this.constructor.create(response.result);
+            } else {
+                throw new Error('JsonRpc format error.', -32700);
+            }
+
+        } catch (e) {
+            console.error(e);
         }
 
-        super.save();
+        return result;
     }
 }
