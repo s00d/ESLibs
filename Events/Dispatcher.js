@@ -19,6 +19,7 @@ export default class Dispatcher {
     listen(name:String, callback:Function) {
         var event = new EventObject(this, name, callback);
         this.getHandlers(name).push(event);
+
         return event;
     }
 
@@ -41,14 +42,18 @@ export default class Dispatcher {
         this.getHandlers(name);
 
         var handlers = this.getCompatibleEvents(name);
+        var result   = args;
 
         for (var i = 0; i < handlers.length; i++) {
-            if (handlers[i].fire(...(args.concat([name]))) === false) {
+            var eventResult = handlers[i].fire(...(result.concat([name])));
+            if (eventResult === false) {
                 return false;
+            } else if (typeof eventResult !== 'undefined') {
+                result = eventResult;
             }
         }
 
-        return true;
+        return result.length === 1 ? result[0] : result;
     }
 
     /**
