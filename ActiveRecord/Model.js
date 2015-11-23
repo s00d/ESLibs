@@ -119,6 +119,7 @@ export default class Model {
         return result;
     }
 
+
     /**
      * @param attributes
      */
@@ -253,8 +254,8 @@ export default class Model {
     toObject() {
         var result = {};
 
-        this.attributes.forEach((field, value) => {
-            result[key] = Serialize.toStructure(value);
+        this.attributes.forEach((value, field) => {
+            result[field] = Serialize.toStructure(value);
         });
 
         return result;
