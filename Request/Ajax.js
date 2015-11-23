@@ -35,18 +35,6 @@ export default class Ajax {
     events = new Dispatcher;
 
     /**
-     * @type {null|string}
-     */
-    csrf = null;
-
-    /**
-     * @constructor
-     */
-    constructor() {
-        this.csrf = Ajax.getCsrfToken();
-    }
-
-    /**
      * @param {Facade} app
      * @param {string} url
      * @param {{}} args
@@ -61,7 +49,7 @@ export default class Ajax {
 
         var builder =
                 (new OptionsBuilder(url, args, options))
-                .addCsrf(this.csrf);
+                .addCsrf(Ajax.getCsrfToken());
 
         var fetchOptions    = builder.getOptions();
         var fetchUrl        = builder.getUrl();
