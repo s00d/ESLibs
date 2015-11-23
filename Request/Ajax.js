@@ -1,4 +1,3 @@
-import Config from "/App/Config";
 import Facade from "/Container/Facade";
 import Inject from "/Container/Inject";
 import Dispatcher from "/Events/Dispatcher";
