@@ -134,7 +134,7 @@ export default class Collection extends BaseCollection {
      * @returns {*}
      */
     async get(options = {}) {
-        var result = await this.constructor.request('get', 'get', this.attributes, options);
+        var result = await this.constructor.request('get', 'get', this.toObject(), options);
         return new this.constructor(result);
     }
 
