@@ -1,6 +1,8 @@
 import {bind} from "/Support/helpers";
+import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
 import Collection from "/Support/Collection";
+
 /**
  * Model
  */
@@ -18,6 +20,19 @@ export default class Model {
      * @type {WeakMap}
      */
     static $booted = new WeakMap();
+
+    /**
+     * Return true if static constructor was called
+     *
+     * @returns {boolean}
+     */
+    static get booted() {
+        if (!this.$booted.has(this)) {
+            this.$booted.set(this, false);
+            this.bootIfNotBooted();
+        }
+        return this.$booted.get(this);
+    }
 
     /**
      * Take event dispatcher for target model
@@ -45,18 +60,16 @@ export default class Model {
         return this.events.listen(event, callback);
     }
 
-
     /**
-     * Return true if static constructor was called
+     * Fire an event
      *
+     * @param event
+     * @param args
      * @returns {boolean}
      */
-    static get booted() {
-        if (!this.$booted.has(this)) {
-            this.$booted.set(this, false);
-            this.bootIfNotBooted();
-        }
-        return this.$booted.get(this);
+    static fire(event, ...args) {
+        this.bootIfNotBooted();
+        return this.events.fire(event, ...args);
     }
 
     /**
@@ -95,7 +108,15 @@ export default class Model {
      * @returns {Model}
      */
     static create(attributes = {}) {
-        return new this(attributes);
+        if (!(attributes = this.fire('creating', attributes))) {
+            return this;
+        }
+
+        var result = new this(attributes);
+
+        this.fire('created', result);
+
+        return result;
     }
 
     /**
@@ -103,14 +124,7 @@ export default class Model {
      */
     constructor(attributes = {}) {
         this.constructor.bootIfNotBooted();
-
-        if (!(attributes = this.constructor.events.fire('creating', attributes))) {
-            return this;
-        }
-
         this.fill(attributes);
-
-        this.constructor.events.fire('created', this);
     }
 
     /**
@@ -118,14 +132,15 @@ export default class Model {
      */
     fill(attributes = {}) {
         for (let field in attributes) {
-            if (!this.has(field)) {
+            if (!this.hasAttribute(field) && !this[field]) {
                 Object.defineProperty(this, field, {
-                    get: () => this.get(field),
-                    set: value => this.set(field, value)
-                })
+                    get: () => this.getAttribute(field),
+                    set: value => this.setAttribute(field, value)
+                });
             }
 
-            this.set(field, attributes[field]);
+            this.attributes.set(field, attributes[field]);
+            this.setAttribute(field, attributes[field]);
             this.sync();
         }
         return this;
@@ -160,7 +175,7 @@ export default class Model {
         var dirty = {};
         this.attributes.forEach((field, value) => {
             if (!this.original.has(field) || this.original.get(field) !== value) {
-                dirty[field] = this.get(field);
+                dirty[field] = this.getAttribute(field);
             }
         });
         return dirty;
@@ -177,8 +192,8 @@ export default class Model {
      * @param field
      * @returns {*}
      */
-    get(field) {
-        if (this.has(field)) {
+    getAttribute(field) {
+        if (this.hasAttribute(field)) {
             return this.attributes.get(field);
         }
         return null;
@@ -189,11 +204,11 @@ export default class Model {
      * @param value
      * @returns {Model}
      */
-    set(field, value) {
+    setAttribute(field, value) {
         var result = [field, value];
         var _$ = this;
 
-        if (this.has(field)) {
+        if (this.hasAttribute(field)) {
             if (!(result = this.constructor.events.fire('updating', this, field, value))) {
                 return this;
             }
@@ -204,14 +219,14 @@ export default class Model {
             this.constructor.events.fire('updated', this, field, value);
             return this;
         }
-        throw new ReferenceError(`Field ${field} not found`);
+        throw new ReferenceError(`Can not set new value. Model attribute ${this.constructor.name}.${field} not found`);
     }
 
     /**
      * @param field
      * @returns {boolean}
      */
-    has(field) {
+    hasAttribute(field) {
         return this.attributes.has(field);
     }
 
@@ -239,13 +254,7 @@ export default class Model {
         var result = {};
 
         this.attributes.forEach((field, value) => {
-            if (typeof value !== 'object' || value instanceof Array) {
-                result[key] = value;
-            } else if (typeof value.toObject === 'function') {
-                result[key] = value.toObject();
-            } else {
-                result[key] = value.toString();
-            }
+            result[key] = Serialize.toStructure(value);
         });
 
         return result;

@@ -51,6 +51,15 @@ export default class Collection {
 
     /**
      * @param event
+     * @param args
+     * @returns {boolean}
+     */
+    fire(event, ...args) {
+        return this.events.fire(event, ...args);
+    }
+
+    /**
+     * @param event
      * @returns {Dispatcher}
      */
     off(event:EventObject) {

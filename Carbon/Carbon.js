@@ -135,7 +135,7 @@ export default class Carbon {
      * @returns {number}
      */
     get timezone() {
-        return this.getTimezoneOffset() * -1 / 60;
+        return this.date.getTimezoneOffset() * -1 / 60;
     }
 
     /**
@@ -178,6 +178,17 @@ export default class Carbon {
      * @returns {string}
      */
     toString() {
-        return this.date.toLocaleString();
+        return this.date.toString();
     }
+
+    /**
+     * @returns {{time: string, zone: number}}
+     */
+    toObject() {
+        return {
+            time: this.toIso8601String(),
+            zone: this.timezone
+        };
+    }
+
 }

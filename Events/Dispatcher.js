@@ -38,7 +38,6 @@ export default class Dispatcher {
      * @returns {boolean}
      */
     fire(name:String, ...args) {
-
         this.getHandlers(name);
 
         var handlers = this.getCompatibleEvents(name);
