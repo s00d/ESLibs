@@ -50,11 +50,59 @@ export default class Collection extends Model {
     }
 
     /**
+     * @param attributes
+     * @returns {attributes}
+     */
+    static create(attributes = {}) {
+        var model = super.create(attributes);
+
+        this.collection.push(model);
+
+        return model;
+    }
+
+    /**
      * ActiveRecord collection
      *
      * @returns {BaseCollection}
      */
     static query() {
         return this.collection;
+    }
+
+
+    // === RELATIONS === //
+
+
+    /**
+     * Create one2one memory relation
+     *
+     * @param {Collection} model
+     * @param localKey
+     * @param foreignKey
+     */
+    hasOne(model:Collection, localKey = null, foreignKey = 'id') {
+        model.bootIfNotBooted();
+
+        if (!localKey) {
+            localKey = model.toLowerCase() + '_id';
+        }
+        return model.find(item => this[localKey] == item[foreignKey]).first();
+    }
+
+    /**
+     * Create one2many relation
+     *
+     * @param {Collection} model
+     * @param localKey
+     * @param foreignKey
+     */
+    hasMany(model:Collection, localKey = 'id', foreignKey = null) {
+        model.bootIfNotBooted();
+
+        if (!foreignKey) {
+            foreignKey = model.toLowerCase() + '_id';
+        }
+        return model.find(item => this[localKey] == item[foreignKey]);
     }
 }
