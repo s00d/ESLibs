@@ -115,6 +115,18 @@ export default class Model {
     }
 
     /**
+     * @param observers
+     */
+    static observe(...observers) {
+        for (let i = 0; i < observers.length; i++) {
+
+            for (let method in observers[i]) {
+                this.on(method, (...args) => observers[i][method](...args));
+            }
+        }
+    }
+
+    /**
      * Static constructor
      */
     static constructor() {
@@ -140,11 +152,11 @@ export default class Model {
             return this;
         }
 
-        var result = new this(attributes);
+        var instance = new this(attributes);
 
-        this.fire('created', result);
+        this.fire('created', instance);
 
-        return result;
+        return instance;
     }
 
     /**
