@@ -1,4 +1,5 @@
 import Arr from "/Support/Arr";
+import Carbon from "/Carbon/Carbon";
 import {bind} from "/Support/helpers";
 import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
@@ -26,6 +27,32 @@ export default class Model {
             this.bootIfNotBooted();
         }
         return this.$booted.get(this);
+    }
+
+    /**
+     * @type {WeakMap}
+     */
+    static $timestamps = new WeakMap();
+
+    /**
+     * @returns {Array}
+     */
+    static get timestamps() {
+        if (!this.$timestamps.has(this)) {
+            this.$timestamps.set(this, [
+                'created_at',
+                'updated_at'
+            ]);
+            this.bootIfNotBooted();
+        }
+        return this.$timestamps.get(this);
+    }
+
+    /**
+     * @param {Array} value
+     */
+    static set timestamps(value:Array) {
+        this.$timestamps.set(this, value);
     }
 
     /**
@@ -207,7 +234,17 @@ export default class Model {
      */
     getAttribute(field) {
         if (this.hasAttribute(field)) {
-            return this.attributes.get(field);
+            var result = this.attributes.get(field);
+
+            // Timestamps
+            if (Arr.has(this.constructor.timestamps, field) && !(result instanceof Carbon)) {
+                result = Carbon.parse(result);
+
+                this.attributes.set(field, result);
+                this.original.set(field, result);
+            }
+
+            return result;
         }
         return null;
     }
