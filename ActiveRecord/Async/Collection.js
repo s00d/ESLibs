@@ -10,6 +10,29 @@ import {default as BaseCollection} from "/ActiveRecord/Collection";
  */
 export default class Collection extends BaseCollection {
     /**
+     * @type {Map}
+     */
+    static $dependsOn = new Map();
+
+    /**
+     * @returns {[]}
+     */
+    static get dependsOn() {
+        if (!this.$dependsOn.has(this)) {
+            this.$dependsOn.set(this, []);
+            this.bootIfNotBooted();
+        }
+        return this.$dependsOn.get(this);
+    }
+
+    /**
+     * @param value
+     */
+    static set dependsOn(value:Array) {
+        this.$dependsOn.set(this, value);
+    }
+
+    /**
      * @type {Map<{adapter: AbstractAdapter, lazyLoadTimeout: Number, rememberTimeout: Number}>}
      */
     static $storage = new Map();
@@ -160,12 +183,20 @@ export default class Collection extends BaseCollection {
      * @returns {Collection}
      */
     static async load(options = {}) {
+        var i = 0;
+
         this.bootIfNotBooted();
         this.fire('loading', this);
 
+
+        // Load dependencies
+        for (i = 0; i < this.dependsOn.length; i++) {
+            await this.dependsOn[i].load();
+        }
+
         var result = await this.request('index', 'get', {}, options);
 
-        for (var i = 0; i < result.length; i++) {
+        for (i = 0; i < result.length; i++) {
             this.create(result[i]);
         }
 
