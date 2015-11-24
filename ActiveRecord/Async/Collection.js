@@ -32,6 +32,7 @@ export default class Collection extends BaseCollection {
      */
     static routes = {
         index:  '/all.json',
+
         get:    '/get/{id}.json',
         update: '/save/{id}.json',
         delete: '/delete/{id}.json'
@@ -134,11 +135,16 @@ export default class Collection extends BaseCollection {
      * @returns {*}
      */
     async get(options = {}) {
-        var result = await this.constructor.request('get', 'get', this.toObject(), options);
-        return new this.constructor(result);
+        var attributes = await this.constructor.request('get', 'get', this.toObject(), options);
+
+        if (this.saved) {
+            return new this.constructor(attributes);
+        }
+        return this.constructor.create(attributes);
     }
 
-    save() {
 
+    async save() {
+        // @TODO
     }
 }

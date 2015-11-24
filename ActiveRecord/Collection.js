@@ -105,4 +105,13 @@ export default class Collection extends Model {
         }
         return model.find(item => this[localKey] == item[foreignKey]);
     }
+
+    /**
+     * In collection
+     *
+     * @returns {boolean}
+     */
+    get saved() {
+        return this.constructor.where('$id', this.$id).length > 0;
+    }
 }

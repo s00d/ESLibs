@@ -28,4 +28,20 @@ export default class Arr {
 
         return result;
     }
+
+    /**
+     *
+     * @param target
+     * @param field
+     * @returns {boolean}
+     */
+    static has(target, field) {
+        for (var i = 0; i < target.length; i++) {
+            if (target[i] == field) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

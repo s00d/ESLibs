@@ -1,3 +1,4 @@
+import Arr from "/Support/Arr";
 import {bind} from "/Support/helpers";
 import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
@@ -119,6 +120,17 @@ export default class Model {
         return result;
     }
 
+    /**
+     * Model last unique id
+     * @type {number}
+     */
+    static $id = 0;
+
+    /**
+     * Model unique id
+     * @type {number}
+     */
+    $id = ++this.constructor.$id;
 
     /**
      * @param attributes
@@ -229,6 +241,43 @@ export default class Model {
      */
     hasAttribute(field) {
         return this.attributes.has(field);
+    }
+
+    /**
+     * Returns basic object with target fields
+     *
+     * @param field
+     * @returns {{}}
+     */
+    only(...field) {
+        var result = {};
+        var data = this.toObject();
+
+        for (var i = 0; i < field.length; i++) {
+            var key = field[i];
+            result[key] = data[key];
+        }
+
+        return result;
+    }
+
+    /**
+     * Returns basic object without target fields
+     *
+     * @param field
+     * @returns {{}}
+     */
+    except(...field) {
+        var result = {};
+        var data = this.toObject();
+
+        for (var key in data) {
+            if (!Arr.has(field, key)) {
+                result[key] = data[key];
+            }
+        }
+
+        return result;
     }
 
     /**
