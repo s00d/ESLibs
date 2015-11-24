@@ -130,7 +130,6 @@ export default class Ajax {
      */
     async post(url, args = {}, options = {}) {
         options.method = 'post';
-
         return await this.request(url, args, options);
     }
 }

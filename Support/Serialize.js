@@ -28,10 +28,10 @@ export default class Serialize {
         if (typeof value !== 'object' || value instanceof Array) {
             result = value;
 
-        } else if (typeof value.toObject === 'function') {
+        } else if (value != null && typeof value.toObject === 'function') {
             result = value.toObject();
 
-        } else if (typeof value.toArray === 'function') {
+        } else if (value != null && typeof value.toArray === 'function') {
             result = value.toArray();
 
         } else if (value != null) {

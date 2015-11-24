@@ -1,3 +1,4 @@
+import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
 import EventObject from "/Events/EventObject";
 
@@ -323,14 +324,13 @@ export default class Collection {
     }
 
     /**
-     * @param target
      * @returns {Array}
      */
-    toArray(target = null) {
-        var result = this.all();
-        if (target instanceof Function) {
-            target(result);
-        }
+    toArray() {
+        var result = [];
+        this.all().forEach(i => {
+            result.push(Serialize.toStructure(i));
+        });
         return result;
     }
 

@@ -10,29 +10,63 @@ import {default as BaseCollection} from "/ActiveRecord/Collection";
  */
 export default class Collection extends BaseCollection {
     /**
-     * @type {Map}
+     * @type {Map<{adapter: AbstractAdapter, lazyLoadTimeout: Number, rememberTimeout: Number}>}
      */
     static $storage = new Map();
 
     /**
      * Returns storage adapter
-     * @returns {AbstractAdapter}
+     * @returns {{adapter: AbstractAdapter, lazyLoadTimeout: Number, rememberTimeout: Number}}
      */
     static get storage() {
         if (!this.$storage.has(this)) {
-            this.storage = new MemoryAdapter;
+            this.$storage.set(this, {
+                adapter:         new Repository(
+                    new MemoryAdapter(
+                        `model:${this.name.toLowerCase()}`
+                    )
+                ),
+                lazyLoadTimeout: 1000,
+                rememberTimeout: 3600000 // 3600000 == 1 hour
+            });
             this.bootIfNotBooted();
         }
+
         return this.$storage.get(this);
     }
 
     /**
      * Setting new storage adapter
      * @param {AbstractAdapter} adapter
+     * @returns {Collection}
      */
-    static set storage(adapter:AbstractAdapter) {
-        adapter.prefix = `model:${this.name.toLowerCase()}:`;
-        this.$storage.set(this, new Repository(adapter))
+    static setStorageAdapter(adapter:AbstractAdapter) {
+        adapter.prefix = `model:${this.name.toLowerCase()}`;
+        this.storage.adapter = new Repository(adapter);
+
+        return this;
+    }
+
+    /**
+     * Setting new lazy load timeout
+     * @param timeout
+     * @returns {Collection}
+     */
+    static setStorageLazyLoadTimeout(timeout) {
+        this.storage.lazyLoadTimeout = timeout;
+
+        return this;
+    }
+
+    /**
+     * Setting new lazy load timeout
+     * @param timeout
+     * @returns {Collection}
+     */
+    static setStorageRememberTimeout(timeout) {
+        this.storage.rememberTimeout = timeout;
+
+        return this;
     }
 
     /**
@@ -60,11 +94,10 @@ export default class Collection extends BaseCollection {
      * @type {{index: string, get: string, update: string, delete: string}}
      */
     static routes = {
-        index:  '/all.json',
-
-        get:    '/get/{id}.json',
-        update: '/save/{id}.json',
-        delete: '/delete/{id}.json'
+        index:  `{name}s.json`,
+        get:    `{name}/{id}.json`,
+        update: `{name}/{id}/save.json`,
+        delete: `{name}/{id}/delete.json`
     };
 
     /**
@@ -80,12 +113,17 @@ export default class Collection extends BaseCollection {
 
         var route = this.routes[name];
         if (!route) {
-            throw new Error(`Route ${name} not defined in ${this.name}.`);
+            if (Collection.routes[name]) {
+                route = Collection.routes[name];
+            } else {
+                throw new Error(`Route ${name} not defined in ${this.name}.`);
+            }
         }
 
+        route = route.replace(`{name}`, this.name.toLowerCase());
         Object.keys(args).forEach(key => {
             var value = args[key];
-            route = route.replace(`{${key}}`, Serialize.toString(value));
+            route     = route.replace(`{${key}}`, Serialize.toString(value));
         });
 
         return route;
@@ -122,24 +160,15 @@ export default class Collection extends BaseCollection {
      * @returns {Collection}
      */
     static async load(options = {}) {
-        var start = (new Date).getTime();
-
-
         this.bootIfNotBooted();
         this.fire('loading', this);
 
         var result = await this.request('index', 'get', {}, options);
 
-        console.log(this.name + ' loaded at ' + ((new Date).getTime() - start) + 'ms');
-        start = (new Date).getTime();
-
         for (var i = 0; i < result.length; i++) {
-            var b = (new Date).getTime();
             this.create(result[i]);
-            console.log(this.name + ' created at ' + ((new Date).getTime() - b) + 'ms');
         }
 
-        console.log(this.name + ' ALL CREATED === ' + ((new Date).getTime() - start) + 'ms');
 
         this.fire('loaded', this);
 
@@ -151,24 +180,44 @@ export default class Collection extends BaseCollection {
      * @param method
      * @param args
      * @param options
-     * @param cache
+     * @param cachedRequest
      * @returns {{saveUp: number, value: Object}}
      */
-    static async request(route, method, args = {}, options = {}, cache = true) {
+    static async request(route, method, args = {}, options = {}, cachedRequest = true) {
         var ajax    = Collection.getAjaxAdapter();
+        var storage = this.storage.adapter;
 
         try {
-            route        = this.routeTo(route, args);
+            route = this.routeTo(route, args);
 
-            if (!this.storage.has(route) || !cache) {
-                var response = await ajax[method](route, {}, options);
+            /**
+             * Get data
+             * @returns {*}
+             */
+            var updateStorageData  = async (route, method, args, options) => {
+                var response = await ajax[method](route, args, options);
                 var json     = await response.json();
                 var result   = this.getResponse(json);
 
-                this.storage.set(route, result);
+                storage.set(route, result, this.storage.rememberTimeout);
+
+                return result;
+            };
+
+            if (!cachedRequest || !storage.has(route)) {
+                // Synchronized update
+                await updateStorageData(route, method, args, options);
+
+            } else if (this.storage.lazyLoadTimeout > 0) {
+
+                // Lazy update
+                setTimeout(
+                    () => updateStorageData(route, method, args, options),
+                    this.storage.lazyLoadTimeout
+                );
             }
 
-            return cache ? this.storage.get(route) : result;
+            return storage.get(route);
 
         } catch (e) {
 
@@ -190,7 +239,23 @@ export default class Collection extends BaseCollection {
     }
 
 
-    async save() {
-        // @TODO
+    /**
+     * @param options
+     */
+    async save(options = {}) {
+        var storage   = this.constructor.storage.adapter;
+
+        // Clear storage
+        var data      = this.toObject();
+
+        storage.remove(this.constructor.routeTo('index', data));
+        storage.remove(this.constructor.routeTo('get', data));
+        storage.remove(this.constructor.routeTo('update', data));
+
+        var result = await this.constructor.request('update', 'post', data, options, false);
+
+        super.save();
+
+        return result;
     }
 }
