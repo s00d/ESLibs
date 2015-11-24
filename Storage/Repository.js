@@ -150,7 +150,7 @@ export default class Repository {
     static createValue(object, mills:Number = 0) {
         return {
             saveUp: mills <= 0 ? 0 : (new Date).getTime() + mills,
-            value:  Serialize.toStructure(object)
+            value:  JSON.parse(JSON.stringify(object))
         }
     }
 
