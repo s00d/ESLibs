@@ -1,11 +1,40 @@
 import Ajax from "/Request/Ajax";
 import Serialize from "/Support/Serialize";
+import Repository from "/Storage/Repository";
+import MemoryAdapter from "/Storage/Adapters/MemoryAdapter";
+import AbstractAdapter from "/Storage/Adapters/AbstractAdapter";
 import {default as BaseCollection} from "/ActiveRecord/Collection";
 
 /**
  *
  */
 export default class Collection extends BaseCollection {
+    /**
+     * @type {Map}
+     */
+    static $storage = new Map();
+
+    /**
+     * Returns storage adapter
+     * @returns {AbstractAdapter}
+     */
+    static get storage() {
+        if (!this.$storage.has(this)) {
+            this.storage = new MemoryAdapter;
+            this.bootIfNotBooted();
+        }
+        return this.$storage.get(this);
+    }
+
+    /**
+     * Setting new storage adapter
+     * @param {AbstractAdapter} adapter
+     */
+    static set storage(adapter:AbstractAdapter) {
+        adapter.prefix = `model:${this.name.toLowerCase()}:`;
+        this.$storage.set(this, new Repository(adapter))
+    }
+
     /**
      * @type {null}
      */
@@ -40,9 +69,10 @@ export default class Collection extends BaseCollection {
 
     /**
      * @param name
+     * @param args
      * @returns {*}
      */
-    static getRoute(name) {
+    static routeTo(name, args = {}) {
         var ajax = Collection.getAjaxAdapter();
         if (!ajax) {
             throw new Error('Ajax adapter not defined');
@@ -52,6 +82,11 @@ export default class Collection extends BaseCollection {
         if (!route) {
             throw new Error(`Route ${name} not defined in ${this.name}.`);
         }
+
+        Object.keys(args).forEach(key => {
+            var value = args[key];
+            route = route.replace(`{${key}}`, Serialize.toString(value));
+        });
 
         return route;
     }
@@ -87,12 +122,24 @@ export default class Collection extends BaseCollection {
      * @returns {Collection}
      */
     static async load(options = {}) {
+        var start = (new Date).getTime();
+
+
         this.bootIfNotBooted();
         this.fire('loading', this);
 
         var result = await this.request('index', 'get', {}, options);
 
-        result.forEach(item => { this.create(item); });
+        console.log(this.name + ' loaded at ' + ((new Date).getTime() - start) + 'ms');
+        start = (new Date).getTime();
+
+        for (var i = 0; i < result.length; i++) {
+            var b = (new Date).getTime();
+            this.create(result[i]);
+            console.log(this.name + ' created at ' + ((new Date).getTime() - b) + 'ms');
+        }
+
+        console.log(this.name + ' ALL CREATED === ' + ((new Date).getTime() - start) + 'ms');
 
         this.fire('loaded', this);
 
@@ -100,29 +147,28 @@ export default class Collection extends BaseCollection {
     }
 
     /**
-     *
      * @param route
      * @param method
      * @param args
      * @param options
-     * @returns {*}
+     * @param cache
+     * @returns {{saveUp: number, value: Object}}
      */
-    static async request(route, method, args = {}, options = {}) {
+    static async request(route, method, args = {}, options = {}, cache = true) {
+        var ajax    = Collection.getAjaxAdapter();
+
         try {
-            route    = this.getRoute(route);
+            route        = this.routeTo(route, args);
 
-            Object.keys(args).forEach(key => {
-                var value = args[key];
-                route = route.replace(`{${key}}`, Serialize.toString(value));
-            });
+            if (!this.storage.has(route) || !cache) {
+                var response = await ajax[method](route, {}, options);
+                var json     = await response.json();
+                var result   = this.getResponse(json);
 
-            var ajax     = Collection.getAjaxAdapter();
+                this.storage.set(route, result);
+            }
 
-            var response = await (
-                await ajax[method](route, {}, options)
-            ).json();
-
-            return this.getResponse(response);
+            return cache ? this.storage.get(route) : result;
 
         } catch (e) {
 

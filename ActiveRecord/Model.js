@@ -9,13 +9,6 @@ import Collection from "/Support/Collection";
  */
 export default class Model {
     /**
-     * Event dispatchers collection WeakMap<Model, Dispatcher>
-     *
-     * @type {WeakMap}
-     */
-    static $events = new WeakMap();
-
-    /**
      * Booted status collection WeakMap<Model, Boolean>
      *
      * @type {WeakMap}
@@ -34,6 +27,13 @@ export default class Model {
         }
         return this.$booted.get(this);
     }
+
+    /**
+     * Event dispatchers collection WeakMap<Model, Dispatcher>
+     *
+     * @type {WeakMap}
+     */
+    static $events = new WeakMap();
 
     /**
      * Take event dispatcher for target model
