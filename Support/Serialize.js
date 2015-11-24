@@ -35,8 +35,14 @@ export default class Serialize {
             result = value.toArray();
 
         } else if (value != null) {
-            result = value.toString();
-
+            if (value instanceof Object) {
+                result = {};
+                for (var key in value) {
+                    result[key] = this.toStructure(value[key]);
+                }
+            } else {
+                result = value.toString();
+            }
         } else {
             result = value;
         }

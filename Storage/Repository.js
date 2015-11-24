@@ -7,7 +7,7 @@ import LocalStorageAdapter from "/Storage/Adapters/LocalStorageAdapter";
 export default class Repository {
     /**
      * @param {String} prefix
-     * @returns {Storage}
+     * @returns {Repository}
      */
     static create(prefix:String) {
         return new this(new LocalStorageAdapter(prefix));
@@ -40,7 +40,7 @@ export default class Repository {
      * @param key
      * @param value
      * @param seconds
-     * @returns {Storage}
+     * @returns {Repository}
      */
     set(key:String, value, seconds:Number = 0) {
         this.adapter.set(key, value || null, seconds * 1000);
@@ -51,7 +51,7 @@ export default class Repository {
      * @param key
      * @param seconds
      * @param callback
-     * @returns {Storage}
+     * @returns {Repository}
      */
     remember(key:String, seconds:Number = 0, callback:Function) {
         if (!this.has(key)) {
@@ -80,7 +80,7 @@ export default class Repository {
     /**
      * @param key
      * @param callback
-     * @returns {Storage}
+     * @returns {Repository}
      */
     rememberForever(key:String, callback:Function) {
         return this.remember(key, 0, callback);
@@ -105,7 +105,7 @@ export default class Repository {
     }
 
     /**
-     * @returns {Storage}
+     * @returns {Repository}
      */
     clear() {
         for (var key in this.adapter.all()) {
@@ -150,7 +150,7 @@ export default class Repository {
     static createValue(object, mills:Number = 0) {
         return {
             saveUp: mills <= 0 ? 0 : (new Date).getTime() + mills,
-            value:  JSON.parse(JSON.stringify(object))
+            value:  Serialize.toStructure(object)
         }
     }
 
@@ -165,7 +165,7 @@ export default class Repository {
 
     /**
      * @param string
-     * @returns {{createdAt: number, saveUp: number, value: object}}
+     * @returns {{saveUp: number, value: object}}
      */
     static valueToObject(string) {
         return JSON.parse(string);
