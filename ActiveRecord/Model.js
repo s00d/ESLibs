@@ -119,8 +119,12 @@ export default class Model {
      */
     static observe(...observers) {
         for (let i = 0; i < observers.length; i++) {
+            let context = Object.getOwnPropertyDescriptors(Reflect.getPrototypeOf(observers[i]));
 
-            for (let method in observers[i]) {
+            for (let method in context) {
+                if (method === 'constructor') {
+                    continue;
+                }
                 this.on(method, (...args) => observers[i][method](...args));
             }
         }

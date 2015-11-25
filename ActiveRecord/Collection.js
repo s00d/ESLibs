@@ -22,7 +22,9 @@ export default class Collection extends Model {
 
             // Import collection methods
             let collection = this.$collections.get(this);
-            for (let method in this.$collections.get(this)) {
+            let keys       = Object.getOwnPropertyDescriptors(Reflect.getPrototypeOf(collection));
+
+            for (let method in keys) {
                 if (collection[method] instanceof Function && typeof this[method] == 'undefined') {
                     Object.defineProperty(this, method, {
                         enumerable: true,
