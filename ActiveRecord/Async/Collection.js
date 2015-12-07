@@ -113,6 +113,32 @@ export default class Collection extends BaseCollection {
         return this._ajax;
     }
 
+
+    static _routesResolver = {
+        index:  data => data,
+        get:    data => data,
+        update: data => data,
+        delete: data => data
+    };
+
+    /**
+     * @param action
+     * @returns {*|Function}
+     */
+    static getRequestResolver(action) {
+        return this._routesResolver[action] || (data => data);
+    }
+
+    /**
+     * @param action
+     * @param resolver
+     * @returns {Collection}
+     */
+    static setRequestResolver(action, resolver) {
+        this._routesResolver[action] = resolver;
+        return this;
+    }
+
     /**
      * @type {{index: string, get: string, update: string, delete: string}}
      */
@@ -228,7 +254,7 @@ export default class Collection extends BaseCollection {
             var updateStorageData  = async (route, method, args, options) => {
                 var response = await ajax[method](route, args, options);
                 var json     = await response.json();
-                var result   = this.getResponse(json);
+                var result   = this.getRequestResolver(route)(json);
 
                 storage.set(route, result, this.storage.rememberTimeout);
 
