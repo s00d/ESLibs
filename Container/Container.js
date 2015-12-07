@@ -55,6 +55,9 @@ export default class Container {
      * @param args
      */
     resolve(cls: Function, ...args) {
+        if (cls == null) {
+            throw new TypeError('Can not resolve undefined class');
+        }
         /**
          * @param target
          * @param args
@@ -83,7 +86,6 @@ export default class Container {
                 };
             })(target[key], key);
         };
-
 
         if (cls[INJECT]) {
             args = getArguments(cls[INJECT]['class'], args);
