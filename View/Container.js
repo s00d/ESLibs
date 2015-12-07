@@ -1,6 +1,7 @@
 import {VIEW} from "/View/View";
 import Inject from "/Container/Inject";
 import Dispatcher from "/Events/Dispatcher";
+import BaseViewModel from "/View/BaseViewModel";
 
 /**
  * View container
@@ -19,6 +20,12 @@ export default class Container {
     _controllers = {};
 
     /**
+     * @type {{}}
+     * @private
+     */
+    _instances = {};
+
+    /**
      * @param controller
      * @returns {*}
      */
@@ -33,6 +40,40 @@ export default class Container {
             this._controllers[aliases[i]] = controller;
         }
 
+        return this;
+    }
+
+    /**
+     * @param view
+     * @returns {BaseViewModel|null}
+     */
+    get(view) {
+        return this._instances[view] || null;
+    }
+
+    /**
+     * @param view
+     * @returns {BaseViewModel|null}
+     */
+    getClass(view) {
+        return this._controllers[view] || null;
+    }
+
+    /**
+     * @param view
+     * @returns {Container}
+     */
+    show(view) {
+        this.get(view).show();
+        return this;
+    }
+
+    /**
+     * @param view
+     * @returns {Container}
+     */
+    hide(view) {
+        this.get(view).hide();
         return this;
     }
 
@@ -60,6 +101,8 @@ export default class Container {
             var instance   = app.resolve(controller, app);
 
             this.injectInstanceFields(instance, name);
+            this._instances[name] = instance;
+
 
             callback(instance, node);
         });

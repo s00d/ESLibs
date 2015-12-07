@@ -26,27 +26,6 @@ export default class BaseViewModel
     }
 
     /**
-     * @returns {{show: show, hide: hide}}
-     */
-    call() {
-        let _this = this;
-        return {
-            show: (...args) => {
-                if (!_this._visible) {
-                    _this._visible = true;
-                    return _this.show(...args);
-                }
-            },
-            hide: (...args) => {
-                if (_this._visible) {
-                    _this._visible = false;
-                    return _this.hide(...args);
-                }
-            }
-        };
-    }
-
-    /**
      * @param args
      */
     @Abstract show(...args) {}
@@ -62,7 +41,13 @@ export default class BaseViewModel
      */
     resize(width, height) {}
 
+    /**
+     *
+     */
     resume() {}
 
+    /**
+     *
+     */
     pause() {}
 }
