@@ -1,5 +1,6 @@
 import Display from "/Support/Display";
 import Abstract from "/Support/Abstract";
+import Dispatcher from "/Events/Dispatcher";
 import Container from "/Container/Container";
 
 /**
@@ -8,9 +9,10 @@ import Container from "/Container/Container";
 export default class BaseViewModel
 {
     /**
-     *
+     * @type {boolean}
+     * @private
      */
-    visible = ko.observable(false);
+    _visible = false;
 
     /**
      * @returns {BaseViewModel}
@@ -30,12 +32,16 @@ export default class BaseViewModel
         let _this = this;
         return {
             show: (...args) => {
-                _this.visible(true);
-                return _this.show(...args);
+                if (!_this._visible) {
+                    _this._visible = true;
+                    return _this.show(...args);
+                }
             },
             hide: (...args) => {
-                _this.visible(false);
-                return _this.hide(...args);
+                if (_this._visible) {
+                    _this._visible = false;
+                    return _this.hide(...args);
+                }
             }
         };
     }
