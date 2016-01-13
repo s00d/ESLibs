@@ -119,6 +119,11 @@ export default class Collection {
      * @returns {Collection}
      */
     remove(callback:Function) {
+        if (!(callback instanceof Function)) {
+            var haystack = callback;
+            callback = function(item) { return item === haystack; };
+        }
+
         var items = [];
         var removed = [];
         var i = 0;

@@ -31,17 +31,25 @@ export default class Arr {
 
     /**
      *
-     * @param target
-     * @param field
+     * @param haystack
+     * @param needle
      * @returns {boolean}
      */
-    static has(target, field) {
-        for (var i = 0; i < target.length; i++) {
-            if (target[i] == field) {
+    static has(haystack, needle) {
+        for (var i = 0; i < haystack.length; i++) {
+            if (haystack[i] == needle) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @param item
+     * @returns {Array}
+     */
+    static make(item) {
+        return item instanceof Array ? item : [item];
     }
 }

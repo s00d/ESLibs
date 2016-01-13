@@ -162,8 +162,22 @@ export default class Collection extends BaseCollection {
         if (response.result) {
             return response.result;
         } else {
+            console.log('Response: ', response);
             throw new Error('JsonRpc format error.', -32700);
         }
+    }
+
+    /**
+     * @returns {Collection}
+     */
+    static async loadDependencies() {
+        // Load dependencies
+        for (var i = 0; i < this.dependsOn.length; i++) {
+            await this.dependsOn[i].load();
+        }
+        this.dependsOn = [];
+
+        return this;
     }
 
     /**
@@ -183,23 +197,16 @@ export default class Collection extends BaseCollection {
      * @returns {Collection}
      */
     static async load(options = {}) {
-        var i = 0;
-
         this.bootIfNotBooted();
         this.fire('loading', this);
 
-
-        // Load dependencies
-        for (i = 0; i < this.dependsOn.length; i++) {
-            await this.dependsOn[i].load();
-        }
+        await this.loadDependencies();
 
         var result = await this.request('index', 'get', {}, options);
 
-        for (i = 0; i < result.length; i++) {
+        for (var i = 0; i < result.length; i++) {
             this.create(result[i]);
         }
-
 
         this.fire('loaded', this);
 
@@ -261,6 +268,8 @@ export default class Collection extends BaseCollection {
      * @returns {*}
      */
     async get(options = {}) {
+        await this.constructor.loadDependencies();
+
         var attributes = await this.constructor.request('get', 'get', this.toObject(), options);
 
         if (this.saved) {

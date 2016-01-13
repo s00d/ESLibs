@@ -1,3 +1,4 @@
+import Arr from "/Support/Arr";
 import {bind} from "/Support/helpers";
 import Model from "/ActiveRecord/Model";
 import {default as BaseCollection} from "/Support/Collection";
@@ -84,12 +85,7 @@ export default class Collection extends Model {
      * @param foreignKey
      */
     hasOne(model:Collection, localKey = null, foreignKey = 'id') {
-        model.bootIfNotBooted();
-
-        if (!localKey) {
-            localKey = model.toLowerCase() + '_id';
-        }
-        return model.find(item => this[localKey] == item[foreignKey]).first();
+        return this.hasMany(model, localKey, foreignKey).first();
     }
 
     /**
@@ -105,7 +101,9 @@ export default class Collection extends Model {
         if (!foreignKey) {
             foreignKey = model.toLowerCase() + '_id';
         }
-        return model.find(item => this[localKey] == item[foreignKey]);
+
+        var haystack = Arr.make(this.attributes.get(localKey));
+        return model.find(item => Arr.has(haystack, item.attributes.get(foreignKey)));
     }
 
     /**
