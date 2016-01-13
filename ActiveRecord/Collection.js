@@ -12,17 +12,17 @@ export default class Collection extends Model {
      *
      * @type {WeakMap}
      */
-    static $collections = new WeakMap();
+    static _collections = new WeakMap();
 
     /**
      * @returns {BaseCollection}
      */
     static get collection() {
-        if (!this.$collections.has(this)) {
-            this.$collections.set(this, new BaseCollection([]));
+        if (!this._collections.has(this)) {
+            this._collections.set(this, new BaseCollection([]));
 
             // Import collection methods
-            let collection = this.$collections.get(this);
+            let collection = this._collections.get(this);
             let keys       = Object.getOwnPropertyDescriptors(Reflect.getPrototypeOf(collection));
 
             for (let method in keys) {
@@ -36,7 +36,7 @@ export default class Collection extends Model {
 
             this.bootIfNotBooted();
         }
-        return this.$collections.get(this);
+        return this._collections.get(this);
     }
 
     /**

@@ -14,7 +14,7 @@ export default class Model {
      *
      * @type {WeakMap}
      */
-    static $booted = new WeakMap();
+    static _booted = new WeakMap();
 
     /**
      * Return true if static constructor was called
@@ -22,37 +22,37 @@ export default class Model {
      * @returns {boolean}
      */
     static get booted() {
-        if (!this.$booted.has(this)) {
-            this.$booted.set(this, false);
+        if (!this._booted.has(this)) {
+            this._booted.set(this, false);
             this.bootIfNotBooted();
         }
-        return this.$booted.get(this);
+        return this._booted.get(this);
     }
 
     /**
      * @type {WeakMap}
      */
-    static $timestamps = new WeakMap();
+    static _timestamps = new WeakMap();
 
     /**
      * @returns {Array}
      */
     static get timestamps() {
-        if (!this.$timestamps.has(this)) {
-            this.$timestamps.set(this, [
+        if (!this._timestamps.has(this)) {
+            this._timestamps.set(this, [
                 'created_at',
                 'updated_at'
             ]);
             this.bootIfNotBooted();
         }
-        return this.$timestamps.get(this);
+        return this._timestamps.get(this);
     }
 
     /**
      * @param {Array} value
      */
     static set timestamps(value:Array) {
-        this.$timestamps.set(this, value);
+        this._timestamps.set(this, value);
     }
 
     /**
@@ -60,7 +60,7 @@ export default class Model {
      *
      * @type {WeakMap}
      */
-    static $events = new WeakMap();
+    static _events = new WeakMap();
 
     /**
      * Take event dispatcher for target model
@@ -70,10 +70,10 @@ export default class Model {
     static get events() {
         this.bootIfNotBooted();
 
-        if (!this.$events.has(this)) {
-            this.$events.set(this, new Dispatcher);
+        if (!this._events.has(this)) {
+            this._events.set(this, new Dispatcher);
         }
-        return this.$events.get(this);
+        return this._events.get(this);
     }
 
     /**
@@ -107,7 +107,7 @@ export default class Model {
      */
     static bootIfNotBooted() {
         if (!this.booted) {
-            this.$booted.set(this, true);
+            this._booted.set(this, true);
             this.events;
             this.constructor();
         }
@@ -140,12 +140,12 @@ export default class Model {
     /**
      * @type {Map}
      */
-    attributes = new Map();
+    _attributes = new Map();
 
     /**
      * @type {Map}
      */
-    original = new Map();
+    _original = new Map();
 
     /**
      * @param attributes
@@ -167,27 +167,27 @@ export default class Model {
      * Model last unique id
      * @type {number}
      */
-    static $id = 0;
+    static _id = 0;
 
     /**
      * Model unique id
      * @type {number}
      */
-    $id = ++this.constructor.$id;
+    _id = ++this.constructor._id;
 
     /**
-     * @param attributes
+     * @param _attributes
      */
-    constructor(attributes = {}) {
+    constructor(_attributes = {}) {
         this.constructor.bootIfNotBooted();
-        this.fill(attributes);
+        this.fill(_attributes);
     }
 
     /**
-     * @param attributes
+     * @param _attributes
      */
-    fill(attributes = {}) {
-        for (let field in attributes) {
+    fill(_attributes = {}) {
+        for (let field in _attributes) {
             if (!this.hasAttribute(field) && !this[field]) {
                 Object.defineProperty(this, field, {
                     get: () => this.getAttribute(field),
@@ -195,8 +195,8 @@ export default class Model {
                 });
             }
 
-            this.attributes.set(field, attributes[field]);
-            this.setAttribute(field, attributes[field]);
+            this._attributes.set(field, _attributes[field]);
+            this.setAttribute(field, _attributes[field]);
             this.sync();
         }
         return this;
@@ -206,9 +206,9 @@ export default class Model {
      * @returns {Model}
      */
     sync() {
-        this.original = new Map;
-        this.attributes.forEach((field, value) => {
-            this.original.set(field, value);
+        this._original = new Map;
+        this._attributes.forEach((field, value) => {
+            this._original.set(field, value);
         });
         return this;
     }
@@ -217,9 +217,9 @@ export default class Model {
      * @returns {Model}
      */
     reset() {
-        this.attributes = new Map;
-        this.original.forEach((field, value) => {
-            this.attributes.set(field, value);
+        this._attributes = new Map;
+        this._original.forEach((field, value) => {
+            this._attributes.set(field, value);
         });
         return this;
     }
@@ -229,8 +229,8 @@ export default class Model {
      */
     get dirty() {
         var dirty = {};
-        this.attributes.forEach((field, value) => {
-            if (!this.original.has(field) || this.original.get(field) !== value) {
+        this._attributes.forEach((field, value) => {
+            if (!this._original.has(field) || this._original.get(field) !== value) {
                 dirty[field] = this.getAttribute(field);
             }
         });
@@ -250,14 +250,14 @@ export default class Model {
      */
     getAttribute(field) {
         if (this.hasAttribute(field)) {
-            var result = this.attributes.get(field);
+            var result = this._attributes.get(field);
 
             // Timestamps
             if (Arr.has(this.constructor.timestamps, field) && !(result instanceof Carbon)) {
                 result = Carbon.parse(result);
 
-                this.attributes.set(field, result);
-                this.original.set(field, result);
+                this._attributes.set(field, result);
+                this._original.set(field, result);
             }
 
             return result;
@@ -280,7 +280,7 @@ export default class Model {
             }
             [_$, field, value] = result;
 
-            this.attributes.set(field, value);
+            this._attributes.set(field, value);
 
             this.constructor.events.fire('updated', this, field, value);
             return this;
@@ -293,7 +293,7 @@ export default class Model {
      * @returns {boolean}
      */
     hasAttribute(field) {
-        return this.attributes.has(field);
+        return this._attributes.has(field);
     }
 
     /**
@@ -356,7 +356,7 @@ export default class Model {
     toObject() {
         var result = {};
 
-        this.attributes.forEach((value, field) => {
+        this._attributes.forEach((value, field) => {
             result[field] = Serialize.toStructure(value);
         });
 

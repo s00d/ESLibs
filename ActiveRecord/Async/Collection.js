@@ -12,38 +12,38 @@ export default class Collection extends BaseCollection {
     /**
      * @type {Map}
      */
-    static $dependsOn = new Map();
+    static _dependsOn = new Map();
 
     /**
      * @returns {[]}
      */
     static get dependsOn() {
-        if (!this.$dependsOn.has(this)) {
-            this.$dependsOn.set(this, []);
+        if (!this._dependsOn.has(this)) {
+            this._dependsOn.set(this, []);
             this.bootIfNotBooted();
         }
-        return this.$dependsOn.get(this);
+        return this._dependsOn.get(this);
     }
 
     /**
      * @param value
      */
     static set dependsOn(value:Array) {
-        this.$dependsOn.set(this, value);
+        this._dependsOn.set(this, value);
     }
 
     /**
      * @type {Map<{adapter: AbstractAdapter, lazyLoadTimeout: Number, rememberTimeout: Number}>}
      */
-    static $storage = new Map();
+    static _storage = new Map();
 
     /**
      * Returns storage adapter
      * @returns {{adapter: AbstractAdapter, lazyLoadTimeout: Number, rememberTimeout: Number}}
      */
     static get storage() {
-        if (!this.$storage.has(this)) {
-            this.$storage.set(this, {
+        if (!this._storage.has(this)) {
+            this._storage.set(this, {
                 adapter:         new Repository(
                     new MemoryAdapter(
                         `model:${this.name.toLowerCase()}`
@@ -55,7 +55,7 @@ export default class Collection extends BaseCollection {
             this.bootIfNotBooted();
         }
 
-        return this.$storage.get(this);
+        return this._storage.get(this);
     }
 
     /**
@@ -95,14 +95,14 @@ export default class Collection extends BaseCollection {
     /**
      * @type {null}
      */
-    static ajax = null;
+    static _ajax = null;
 
     /**
      * @param adapter
      * @returns {Collection}
      */
     static setAjaxAdapter(adapter) {
-        this.ajax = adapter;
+        this._ajax = adapter;
         return this;
     }
 
@@ -110,7 +110,33 @@ export default class Collection extends BaseCollection {
      * @returns {Ajax}
      */
     static getAjaxAdapter() {
-        return this.ajax;
+        return this._ajax;
+    }
+
+
+    static _routesResolver = {
+        index:  data => data,
+        get:    data => data,
+        update: data => data,
+        delete: data => data
+    };
+
+    /**
+     * @param action
+     * @returns {*|Function}
+     */
+    static getRequestResolver(action) {
+        return this._routesResolver[action] || (data => data);
+    }
+
+    /**
+     * @param action
+     * @param resolver
+     * @returns {Collection}
+     */
+    static setRequestResolver(action, resolver) {
+        this._routesResolver[action] = resolver;
+        return this;
     }
 
     /**
@@ -235,7 +261,7 @@ export default class Collection extends BaseCollection {
             var updateStorageData  = async (route, method, args, options) => {
                 var response = await ajax[method](route, args, options);
                 var json     = await response.json();
-                var result   = this.getResponse(json);
+                var result   = this.getRequestResolver(route)(json);
 
                 storage.set(route, result, this.storage.rememberTimeout);
 
