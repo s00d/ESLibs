@@ -113,7 +113,10 @@ export default class Collection extends BaseCollection {
         return this._ajax;
     }
 
-
+    /**
+     * @type {{index: Collection._routesResolver.index, get: Collection._routesResolver.get, update: Collection._routesResolver.update, delete: Collection._routesResolver.delete}}
+     * @private
+     */
     static _routesResolver = {
         index:  data => data,
         get:    data => data,
@@ -248,40 +251,40 @@ export default class Collection extends BaseCollection {
      * @returns {{saveUp: number, value: Object}}
      */
     static async request(route, method, args = {}, options = {}, cachedRequest = true) {
-        var ajax    = Collection.getAjaxAdapter();
-        var storage = this.storage.adapter;
+        var ajax     = Collection.getAjaxAdapter();
+        var storage  = this.storage.adapter;
 
         try {
-            route = this.routeTo(route, args);
+            var uri = this.routeTo(route, args);
 
             /**
              * Get data
              * @returns {*}
              */
-            var updateStorageData  = async (route, method, args, options) => {
-                var response = await ajax[method](route, args, options);
+            var updateStorageData  = async (uri, method, args, options) => {
+                var response = await ajax[method](uri, args, options);
                 var json     = await response.json();
                 var result   = this.getRequestResolver(route)(json);
 
-                storage.set(route, result, this.storage.rememberTimeout);
+                storage.set(uri, result, this.storage.rememberTimeout);
 
                 return result;
             };
 
-            if (!cachedRequest || !storage.has(route)) {
+            if (!cachedRequest || !storage.has(uri)) {
                 // Synchronized update
-                await updateStorageData(route, method, args, options);
+                await updateStorageData(uri, method, args, options);
 
             } else if (this.storage.lazyLoadTimeout > 0) {
 
                 // Lazy update
                 setTimeout(
-                    () => updateStorageData(route, method, args, options),
+                    () => updateStorageData(uri, method, args, options),
                     this.storage.lazyLoadTimeout
                 );
             }
 
-            return storage.get(route);
+            return storage.get(uri);
 
         } catch (e) {
 

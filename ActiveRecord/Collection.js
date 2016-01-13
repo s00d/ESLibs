@@ -102,8 +102,8 @@ export default class Collection extends Model {
             foreignKey = model.toLowerCase() + '_id';
         }
 
-        var haystack = Arr.make(this.attributes.get(localKey));
-        return model.find(item => Arr.has(haystack, item.attributes.get(foreignKey)));
+        var haystack = Arr.make(this._attributes.get(localKey));
+        return model.find(item => Arr.has(haystack, item._attributes.get(foreignKey)));
     }
 
     /**
