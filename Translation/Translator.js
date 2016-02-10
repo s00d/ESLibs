@@ -4,7 +4,9 @@ import Obj from "/Support/Obj";
 import Regex from "/Support/Regex";
 
 /**
- *
+ * Symfony and Laravel format compatible translator
+ * @see https://laravel.com/docs/5.2/localization
+ * @see http://symfony.com/doc/current/book/translation.html
  */
 export default class Translator {
     /**
@@ -88,16 +90,18 @@ export default class Translator {
 
     /**
      * @param {string} text
-     * @param {number} count
+     * @param {number|object} args
      * @returns {string}
      */
-    plural(text:String, count:Number):String {
-        count     = parseInt(count || 0);
+    plural(text:String, args = {}):String {
+        if (typeof args === 'string' || typeof args === 'number') {
+            args = {count: parseInt(args || 0)};
+        }
+        var count = args.count || 0;
 
         var texts = this
-            .translate(text, {count: count})
+            .translate(text, args)
             .split('|');
-
 
         var matches = [];
         for (var i = 0, length = texts.length; i < length; i++) {
@@ -105,7 +109,6 @@ export default class Translator {
             if (matches && count === parseInt(matches[1])) {
                 return matches[2];
             }
-
 
             matches = (/^(\[|\])([0-9]+|\-Inf)\s*,\s*([0-9]+|Inf)(\[|\])\s(.*?)$/g).exec(texts[i]);
             if (matches && matches.length === 6) {
@@ -126,6 +129,6 @@ export default class Translator {
                 .splice(0, 3);
         }
 
-        return this.replace(Str.pluralize(texts, count), {count: count});
+        return this.replace(Str.pluralize(texts, count), args);
     }
 }
