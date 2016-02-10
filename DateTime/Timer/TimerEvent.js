@@ -182,7 +182,7 @@ export default class TimerEvent {
 
             this.compensateTimeout().fire(this);
 
-            if (this._overlapping) {
+            if (!this._overlapping) {
                 return this;
             }
         }
