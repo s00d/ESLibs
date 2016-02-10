@@ -33,15 +33,25 @@ export default class Translator {
 
         var createKeyRegExpression = key => new RegExp(`(\\s|^)(:${key})\.?(\\s|$)`, 'g');
 
-        Object.keys(args).forEach((key) => {
-            var regexp = createKeyRegExpression(Regex.escape(key));
-            result = result.replace(regexp, `$1${args[key]}$3`);
-        });
+        var replace = (text, args = {}) => {
+            var result = text;
+            Object.keys(args).forEach((key) => {
+                var regexp   = createKeyRegExpression(Regex.escape(key));
+                var value    = args[key].toString();
+                var replaced = result.replace(regexp, `$1${value}$3`);
 
-        Object.keys(this._texts).forEach((key) => {
-            var regexp = createKeyRegExpression(Regex.escape(key));
-            result = result.replace(regexp, `$1${this._texts[key]}$3`);
-        });
+                if (replaced !== result && value.indexOf('|') > -1) {
+                    value    = this.plural(value, args.count || 0);
+                    replaced = result.replace(regexp, `$1${value}$3`);
+                }
+
+                result = replaced;
+            });
+            return result;
+        };
+
+        result = replace(result, args);
+        result = replace(result, this._texts);
 
         if (result !== text) {
             return this.translate(result, args);
@@ -56,9 +66,10 @@ export default class Translator {
      * @returns {string}
      */
     plural(text:String, count:Number) : String {
-        text = this.translate(text);
+        text  = this.translate(text);
+        count = parseInt(count || 0);
         var texts = text.split('|').concat([':count', ':count']).splice(0, 3);
 
-        return this.translate(Str.pluralize(texts, count), {count: count});
+        return this.translate(Str.pluralize(texts, parseInt(count || 0)), {count: count});
     }
 }
