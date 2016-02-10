@@ -24,36 +24,24 @@ export default class Translator {
     }
 
     /**
+     * @param key
+     * @param escape
+     * @returns {RegExp}
+     */
+    keyRegexp(key, escape = true) {
+        if (escape) { key = Regex.escape(key); }
+        return new RegExp(`(:${key})\.?(\\s|$)`, 'g');
+    }
+
+    /**
      * @param {string} text
      * @param {object} args
      * @returns {string}
      */
-    translate(text:String, args:Object = {}) : String {
-        var result = text || '';
+    translate(text:String, args:Object = {}):String {
+        var result = this.replace(text || '', this.dictionary(text, args));
 
-        var createKeyRegExpression = key => new RegExp(`(\\s|^)(:${key})\.?(\\s|$)`, 'g');
-
-        var replace = (text, args = {}) => {
-            var result = text;
-            Object.keys(args).forEach((key) => {
-                var regexp   = createKeyRegExpression(Regex.escape(key));
-                var value    = args[key].toString();
-                var replaced = result.replace(regexp, `$1${value}$3`);
-
-                if (replaced !== result && value.indexOf('|') > -1) {
-                    value    = this.plural(value, args.count || 0);
-                    replaced = result.replace(regexp, `$1${value}$3`);
-                }
-
-                result = replaced;
-            });
-            return result;
-        };
-
-        result = replace(result, args);
-        result = replace(result, this._texts);
-
-        if (result !== text) {
+        if (Object.keys(this.dictionary(result, args)).length > 0) {
             return this.translate(result, args);
         }
 
@@ -61,15 +49,83 @@ export default class Translator {
     }
 
     /**
+     * @param text
+     * @param args
+     * @returns {{}}
+     */
+    dictionary(text, args = {}) {
+        var result   = {};
+        var patterns = (text.match(this.keyRegexp('[a-z0-9\\.]+', false)) || []);
+        args         = Obj.merge(this._texts, args);
+
+        for (var i = 0; i < patterns.length; i++) {
+            var key = patterns[i].trim().substr(1);
+            if (args[key] != null) {
+                result[key] = args[key].toString();
+            }
+        }
+
+        return result;
+
+    }
+
+    /**
+     * @param text
+     * @param args
+     * @returns {*}
+     */
+    replace(text, args = {}) {
+        var result = text;
+
+        Object.keys(args).forEach(key => {
+            var regexp = this.keyRegexp(key);
+            var value  = (args[key] == null) ? '' : args[key].toString();
+            result = result.replace(regexp, `${value}$2`);
+        });
+
+        return result;
+    };
+
+    /**
      * @param {string} text
      * @param {number} count
      * @returns {string}
      */
-    plural(text:String, count:Number) : String {
-        text  = this.translate(text);
-        count = parseInt(count || 0);
-        var texts = text.split('|').concat([':count', ':count']).splice(0, 3);
+    plural(text:String, count:Number):String {
+        count     = parseInt(count || 0);
 
-        return this.translate(Str.pluralize(texts, parseInt(count || 0)), {count: count});
+        var texts = this
+            .translate(text, {count: count})
+            .split('|');
+
+
+        var matches = [];
+        for (var i = 0; i < 3; i++) {
+            matches = (/^{([0-9]+)}\s(.*?)$/g).exec(texts[i]);
+            if (matches && count === parseInt(matches[1])) {
+                return matches[2];
+            }
+
+
+            matches = (/^(\[|\])([0-9]+|\-Inf)\s*,\s*([0-9]+|Inf)(\[|\])\s(.*?)$/g).exec(texts[i]);
+            if (matches && matches.length === 6) {
+                var first       = matches[2] === '-Inf' ? Number.MIN_VALUE : parseInt(matches[2]);
+                var second      = matches[3] === 'Inf'  ? Number.MAX_VALUE : parseInt(matches[3]);
+                var firstEqual  = (matches[1] === '[') ? count >= first  : count > first;
+                var secondEqual = (matches[4] === ']') ? count <= second : count < second;
+
+                if (firstEqual && secondEqual) {
+                    return matches[5];
+                }
+            }
+        }
+
+        if (texts < 3) {
+            texts = texts
+                .concat([':count', ':count'])
+                .splice(0, 3);
+        }
+
+        return this.replace(Str.pluralize(texts, count), {count: count});
     }
 }
