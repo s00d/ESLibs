@@ -100,7 +100,7 @@ export default class Translator {
 
 
         var matches = [];
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0, length = texts.length; i < length; i++) {
             matches = (/^{([0-9]+)}\s(.*?)$/g).exec(texts[i]);
             if (matches && count === parseInt(matches[1])) {
                 return matches[2];
