@@ -1,5 +1,8 @@
 export default class Arr {
-
+    /**
+     * @param target
+     * @returns {Array}
+     */
     static reduce(target) {
         var result = [];
 
