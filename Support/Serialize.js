@@ -4,6 +4,9 @@ export default class Serialize {
      * @returns {String}
      */
     static toString(value) {
+        if (typeof(value) === 'number') {
+            return value.toString();
+        }
         var result = this.toStructure(value);
         return result ? result.toString() : '';
     }

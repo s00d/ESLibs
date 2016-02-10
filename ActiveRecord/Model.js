@@ -1,5 +1,5 @@
 import Arr from "/Support/Arr";
-import Carbon from "/Carbon/Carbon";
+import DateTime from "/DateTime/DateTime";
 import {bind} from "/Support/helpers";
 import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
@@ -184,6 +184,38 @@ export default class Model {
     }
 
     /**
+     * Create one2one memory relation
+     *
+     * @param {Model} model
+     * @param localKey
+     * @param foreignKey
+     */
+    hasOne(model:Model, localKey = null, foreignKey = 'id') {
+        model.bootIfNotBooted();
+
+        if (!localKey) {
+            localKey = model.toLowerCase() + '_id';
+        }
+        return model.find(item => this[localKey] == item[foreignKey]).first();
+    }
+
+    /**
+     * Create one2many relation
+     *
+     * @param {Model} model
+     * @param localKey
+     * @param foreignKey
+     */
+    hasMany(model:Model, localKey = 'id', foreignKey = null) {
+        model.bootIfNotBooted();
+
+        if (!foreignKey) {
+            foreignKey = model.toLowerCase() + '_id';
+        }
+        return model.find(item => this[localKey] == item[foreignKey]);
+    }
+
+    /**
      * @param _attributes
      */
     fill(_attributes = {}) {
@@ -253,8 +285,8 @@ export default class Model {
             var result = this._attributes.get(field);
 
             // Timestamps
-            if (Arr.has(this.constructor.timestamps, field) && !(result instanceof Carbon)) {
-                result = Carbon.parse(result);
+            if (Arr.has(this.constructor.timestamps, field) && !(result instanceof DateTime)) {
+                result = DateTime.parse(result);
 
                 this._attributes.set(field, result);
                 this._original.set(field, result);

@@ -46,11 +46,25 @@ export default class Ajax {
             return null;
         }
 
-        var builder =
-                (new OptionsBuilder(url, args, options))
+        (url.split('?')[1] || '').split('&').forEach(insideArg => {
+            var [key, value] = insideArg.split('=');
+            args[key] = value;
+        });
+        url = url.split('?')[0];
+
+        options.redirect = 'manual';
+
+        // Pattern matching
+        Object.keys(args).forEach(key => {
+            url = url.replace('{' + key + '}', args[key]);
+        });
+
+        var builder = (new OptionsBuilder(url, args, options))
                 .addCsrf(Ajax.getCsrfToken());
 
+
         var fetchOptions    = builder.getOptions();
+
         var fetchUrl        = builder.getUrl();
 
         if (!this.events.fire('before', fetchUrl, fetchOptions)) {
@@ -59,9 +73,7 @@ export default class Ajax {
 
         try {
             var result = await fetch(fetchUrl, fetchOptions);
-
         } catch (e) {
-
             throw new Error(`Error while fetching ${fetchUrl}`, 500, e);
         }
 

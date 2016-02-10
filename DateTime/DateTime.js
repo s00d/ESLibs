@@ -1,78 +1,85 @@
+import DateTimeZone from "/DateTime/DateTimeZone";
+import DateInterval from "/DateTime/DateInterval";
+
 /**
  *
  */
-export default class Carbon {
+export default class DateTime {
     /**
-     * @type {number}
+     * @type {DateTimeZone}
      */
-    static timezone = 0;
+    static timezone = DateTimeZone.utc();
 
     /**
      * @param timezone
-     * @returns {Carbon}
+     * @returns {DateTime}
      */
-    static setServerTimezone(timezone) {
-        this.timezone = timezone;
+    static setTimezone(timezone) {
+        this.timezone = DateTimeZone.create(timezone);
         return this;
     }
 
     /**
-     * @returns {number}
+     * @returns {DateTimeZone}
      */
-    static getServerTimezone() {
+    static getTimezone() {
         return this.timezone;
     }
 
     /**
-     * @param string
-     * @returns {Carbon}
-     */
-    static parse(string) {
-        if (typeof string === 'undefined' || string === null) {
-            return Carbon.now();
-
-        } else if (string instanceof Carbon) {
-            return string;
-
-        } else if (string instanceof Date) {
-            return new Carbon(string.getTime());
-
-        } else if (string instanceof Object) {
-            string = string.date;
-        }
-
-        var pattern = /^\-?[0-9]{4}\-[0-9]{2}\-[0-9]{2}(?:\s[0-9]{2}:[0-9]{2}:[0-9]{2})?/;
-
-        if (string.match(pattern)) {
-            var timezone      = this.getServerTimezone();
-            var timezoneMills = timezone * 60 * 60 * 1000;
-            var timeArguments = string.split(/\-|:|\s|\./);
-            timeArguments[1]  = (timeArguments[1] - 1);
-            var timestamp     = Date.UTC.apply(Date, timeArguments) - timezoneMills;
-
-            return new Carbon(timestamp);
-        }
-
-        return new Carbon(string);
-    }
-
-    /**
-     * @returns {Carbon}
+     * @returns {DateTime}
      */
     static now() {
-        return new Carbon();
+        return new DateTime();
     }
 
     /**
-     * @type {Date}
+     * Milliseconds
+     * @type {number}
      */
-    date = null;
+    _timestamp = 0;
 
     /**
-     * @param args
+     * @type {DateTimeZone}
+     * @private
      */
-    constructor(...args) {
-        this.date = new Date(...args);
+    _timezone = DateTimeZone.utc();
+
+    /**
+     * @param {number|Date} time
+     */
+    constructor(time) {
+        if (!time) {
+            time = Date.now();
+        }
+        this._timestamp = time;
+        this.timezone   = this.constructor.getTimezone();
+    }
+
+    /**
+     * @param date
+     * @returns {DateInterval}
+     */
+    diff(date) {
+        date = new this.constructor(date);
+
+        return new DateInterval(this._timestamp)
+            .subMilliseconds(date.milliseconds);
+    }
+
+    /**
+     * @returns {DateTimeZone}
+     */
+    get timezone() {
+        return this._timezone;
+    }
+
+    /**
+     * @param {DateTimeZone} tz
+     */
+    set timezone(tz) {
+        this._timezone   = tz;
+        this._timestamp -= tz.milliseconds;
     }
 
     /**
@@ -128,14 +135,7 @@ export default class Carbon {
      * @returns {number}
      */
     get timestamp() {
-        return this.date.getTime();
-    }
-
-    /**
-     * @returns {number}
-     */
-    get timezone() {
-        return this.date.getTimezoneOffset() * -1 / 60;
+        return this._timestamp;
     }
 
     /**
@@ -158,6 +158,13 @@ export default class Carbon {
             .replace('i', this.minutes > 9 ? this.minutes : ('0' + this.minutes))
             .replace('s', this.seconds > 9 ? this.seconds : ('0' + this.seconds))
             .replace('a', this.hours > 12 ? 'pm' : 'am');
+    }
+
+    /**
+     * @returns {Date}
+     */
+    get date() {
+        return new Date(this.timestamp + this.timezone.milliseconds);
     }
 
     /**
