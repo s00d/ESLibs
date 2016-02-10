@@ -13,7 +13,7 @@ export default class OptionsBuilder {
     url = '/';
 
     /**
-     * @type {{}}
+     * @type {FormData}
      */
     args = {};
 
@@ -31,11 +31,12 @@ export default class OptionsBuilder {
         this.url     = url;
         this.args    = args;
 
-
         this.options = {
             method:         (options.method || 'get').toLocaleLowerCase(),
             headers:        new Headers(options.headers || {}),
-            credentials:    (options.credentials || 'same-origin')
+            credentials:    (options.credentials || 'same-origin'),
+            redirect:       (options.redirect || 'follow'),
+            body:           (options.body || null)
         };
     }
 

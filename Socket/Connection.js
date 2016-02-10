@@ -118,7 +118,7 @@ export default class Connection {
         return new Promise((resolve, reject) => {
             // Response timeout
             var errorTimeout = setTimeout(() => {
-                return reject(new Error('Socket response timeout for requestId ' + id));
+                return reject(new Error(`Socket response timeout for requestId ${id}`, 500));
             }, 5000);
 
             var event = this.events.listen('message', data => {
@@ -152,7 +152,7 @@ export default class Connection {
      * @returns {Connection}
      */
     onOpen(callback:Function) {
-        this.events.listen('open', cb);
+        this.events.listen('open', callback);
         return this;
     }
 
@@ -161,7 +161,7 @@ export default class Connection {
      * @returns {Connection}
      */
     onError(callback:Function) {
-        this.events.listen('error', cb);
+        this.events.listen('error', callback);
         return this;
     }
 
@@ -170,7 +170,7 @@ export default class Connection {
      * @returns {Connection}
      */
     onMessage(callback:Function) {
-        this.events.listen('message', cb);
+        this.events.listen('message', callback);
         return this;
     }
 
@@ -179,7 +179,7 @@ export default class Connection {
      * @returns {Connection}
      */
     onClose(callback:Function) {
-        this.events.listen('close', cb);
+        this.events.listen('close', callback);
         return this;
     }
 

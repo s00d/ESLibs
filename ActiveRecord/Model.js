@@ -1,63 +1,58 @@
+import Arr from "/Support/Arr";
+import DateTime from "/DateTime/DateTime";
 import {bind} from "/Support/helpers";
+import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
 import Collection from "/Support/Collection";
+
 /**
  * Model
  */
 export default class Model {
     /**
-     * Model identifiers collection WeakMap<Model, String>
+     * Booted status collection WeakMap<Model, Boolean>
      *
      * @type {WeakMap}
      */
-    static $uuid = new WeakMap();
+    static _booted = new WeakMap();
 
     /**
-     * Model unique name
+     * Return true if static constructor was called
      *
-     * @returns {V}
+     * @returns {boolean}
      */
-    static get uuid() {
-        if (!this.$uuid.has(this)) {
-            this.$uuid.set(this, 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-                return v.toString(16);
-            }))
+    static get booted() {
+        if (!this._booted.has(this)) {
+            this._booted.set(this, false);
+            this.bootIfNotBooted();
         }
-        return this.$uuid.get(this);
+        return this._booted.get(this);
     }
 
     /**
-     * Model collections map WeakMap<Model, Collection>
-     *
      * @type {WeakMap}
      */
-    static $collections = new WeakMap();
+    static _timestamps = new WeakMap();
 
     /**
-     * Return collection for target model and create method links for model to target collection
-     *
-     * @returns {Collection}
+     * @returns {Array}
      */
-    static get collection() {
-        this.bootIfNotBooted();
-
-        if (!this.$collections.has(this)) {
-            this.$collections.set(this, new Collection([]));
-
-            // Import collection methods
-            let collection = this.$collections.get(this);
-            for (let method in this.$collections.get(this)) {
-                if (collection[method] instanceof Function && typeof this[method] == 'undefined') {
-                    Object.defineProperty(this, method, {
-                        enumerable: true,
-                        get:        () => bind(collection[method], collection)
-                    })
-                }
-            }
+    static get timestamps() {
+        if (!this._timestamps.has(this)) {
+            this._timestamps.set(this, [
+                'created_at',
+                'updated_at'
+            ]);
+            this.bootIfNotBooted();
         }
+        return this._timestamps.get(this);
+    }
 
-        return this.$collections.get(this);
+    /**
+     * @param {Array} value
+     */
+    static set timestamps(value:Array) {
+        this._timestamps.set(this, value);
     }
 
     /**
@@ -65,20 +60,20 @@ export default class Model {
      *
      * @type {WeakMap}
      */
-    static $dispatchers = new WeakMap();
+    static _events = new WeakMap();
 
     /**
      * Take event dispatcher for target model
      *
      * @returns {Dispatcher}
      */
-    static get dispatcher() {
+    static get events() {
         this.bootIfNotBooted();
 
-        if (!this.$dispatchers.has(this)) {
-            this.$dispatchers.set(this, new Dispatcher);
+        if (!this._events.has(this)) {
+            this._events.set(this, new Dispatcher);
         }
-        return this.$dispatchers.get(this);
+        return this._events.get(this);
     }
 
     /**
@@ -90,34 +85,19 @@ export default class Model {
      */
     static on(event, callback:Function) {
         this.bootIfNotBooted();
-
-        return this.dispatcher.listen(event, callback);
+        return this.events.listen(event, callback);
     }
 
     /**
-     * @returns {Collection}
-     */
-    static query() {
-        return this.collection;
-    }
-
-    /**
-     * Booted status collection WeakMap<Model, Boolean>
+     * Fire an event
      *
-     * @type {WeakMap}
-     */
-    static $booted = new WeakMap();
-
-    /**
-     * Return true if static constructor was called
-     *
+     * @param event
+     * @param args
      * @returns {boolean}
      */
-    static get booted() {
-        if (!this.$booted.has(this)) {
-            this.$booted.set(this, false);
-        }
-        return this.$booted.get(this);
+    static fire(event, ...args) {
+        this.bootIfNotBooted();
+        return this.events.fire(event, ...args);
     }
 
     /**
@@ -127,141 +107,80 @@ export default class Model {
      */
     static bootIfNotBooted() {
         if (!this.booted) {
-            this.$booted.set(this, true);
-
-            this.collection;
-            this.dispatcher;
-
+            this._booted.set(this, true);
+            this.events;
             this.constructor();
         }
         return this;
     }
 
     /**
-     * Create a new instance from given attributes and add in collection
-     *
-     * @param attributes
-     * @returns {Model}
+     * @param observers
      */
-    static create(attributes = {}) {
-        this.bootIfNotBooted();
+    static observe(...observers) {
+        for (let i = 0; i < observers.length; i++) {
+            let context = Object.getOwnPropertyDescriptors(Reflect.getPrototypeOf(observers[i]));
 
-        attributes = this.dispatcher.fire('creating', attributes);
-
-        var model = new this(attributes);
-
-        model = this.dispatcher.fire('created', model);
-
-        model.save();
-
-        return model;
-    }
-
-    /**
-     * Static constructor (run after calling bootIfNotBooted)
-     *
-     * @return void
-     */
-    static constructor() {
-        // Do nothing
-    }
-
-    //
-    // ================ INSTANCE ================
-    //
-
-
-    /**
-     * Original attributes
-     *
-     * @type {{}}
-     */
-    original = {};
-
-    /**
-     * Current values of attributes
-     *
-     * @type {{}}
-     */
-    attributes = {};
-
-    /**
-     * Updated values of attributes (this.original <=> this.attributes diff)
-     *
-     * @type {{}}
-     */
-    updated = {};
-
-    /**
-     * A new model instance
-     *
-     * @param attributes
-     */
-    constructor(attributes = {}) {
-        this.constructor.bootIfNotBooted();
-
-        this.fill(attributes);
-    }
-
-    //
-    // =============== PROPERTIES AND RELATIONS ===============
-    //
-
-    /**
-     * Fill attributes and create accessors
-     *
-     * @param attributes
-     */
-    fill(attributes = {}) {
-        this.original = this.attributes = attributes;
-
-        for (let attribute in attributes) {
-            if (typeof this[attribute] == 'undefined') {
-                Object.defineProperty(this, attribute, {
-                    enumerable: true,
-                    get:        () => this.get(attribute),
-                    set:        value => this.set(attribute, value)
-                })
+            for (let method in context) {
+                if (method === 'constructor') {
+                    continue;
+                }
+                this.on(method, (...args) => observers[i][method](...args));
             }
         }
     }
 
     /**
-     * Get attribute from attributes
-     *
-     * @param attribute
-     * @returns {*}
+     * Static constructor
      */
-    get(attribute) {
-        if (this.has(attribute)) {
-            return this.attributes[attribute];
-        }
-        return null;
+    static constructor() {
+        // Do nothing
     }
 
     /**
-     * Set new attribute value
-     *
-     * @param attribute
-     * @param value
+     * @type {Map}
+     */
+    _attributes = new Map();
+
+    /**
+     * @type {Map}
+     */
+    _original = new Map();
+
+    /**
+     * @param attributes
      * @returns {Model}
      */
-    set(attribute, value) {
-        if (this.has(attribute)) {
-            this.attributes[attribute] = value;
-            this.updated[attribute]    = value;
+    static create(attributes = {}) {
+        if (!(attributes = this.fire('creating', attributes))) {
+            return this;
         }
-        return this;
+
+        var instance = new this(attributes);
+
+        this.fire('created', instance);
+
+        return instance;
     }
 
     /**
-     * Checking attribute for existing
-     *
-     * @param attribute
-     * @returns {boolean}
+     * Model last unique id
+     * @type {number}
      */
-    has(attribute) {
-        return !!this.original[attribute];
+    static _id = 0;
+
+    /**
+     * Model unique id
+     * @type {number}
+     */
+    _id = ++this.constructor._id;
+
+    /**
+     * @param _attributes
+     */
+    constructor(_attributes = {}) {
+        this.constructor.bootIfNotBooted();
+        this.fill(_attributes);
     }
 
     /**
@@ -297,129 +216,182 @@ export default class Model {
     }
 
     /**
-     * Returns true if attribute values was be updated
-     *
-     * @returns {boolean}
+     * @param _attributes
      */
-    dirty() {
-        return Object.keys(this.updated).length > 0;
-    }
+    fill(_attributes = {}) {
+        for (let field in _attributes) {
+            if (!this.hasAttribute(field) && !this[field]) {
+                Object.defineProperty(this, field, {
+                    get: () => this.getAttribute(field),
+                    set: value => this.setAttribute(field, value)
+                });
+            }
 
-    /**
-     * Reset attributes to default
-     *
-     * @returns {Model}
-     */
-    reset() {
-        this.attributes = this.original;
+            this._attributes.set(field, _attributes[field]);
+            this.setAttribute(field, _attributes[field]);
+            this.sync();
+        }
         return this;
     }
 
     /**
-     * Sync original values from updated
-     *
      * @returns {Model}
      */
     sync() {
-        this.original = this.attributes;
-        this.updated  = {};
+        this._original = new Map;
+        this._attributes.forEach((field, value) => {
+            this._original.set(field, value);
+        });
         return this;
     }
 
-    //
-    // =============== COLLECTION ACTIONS ===============
-    //
+    /**
+     * @returns {Model}
+     */
+    reset() {
+        this._attributes = new Map;
+        this._original.forEach((field, value) => {
+            this._attributes.set(field, value);
+        });
+        return this;
+    }
 
     /**
-     * Sync values, add in collections if not exists and return updated values
-     *
      * @returns {{}}
      */
-    save() {
-        var fields = this.updated;
-
-        if (!this.constructor.dispatcher.fire('saving', this)) {
-            return fields;
-        }
-
-        this.sync();
-
-        if (!this.saved()) {
-            this.constructor.collection.push(this);
-        }
-
-        this.constructor.dispatcher.fire('saved', this);
-
-        return fields;
+    get dirty() {
+        var dirty = {};
+        this._attributes.forEach((field, value) => {
+            if (!this._original.has(field) || this._original.get(field) !== value) {
+                dirty[field] = this.getAttribute(field);
+            }
+        });
+        return dirty;
     }
 
     /**
-     * Return true if model exists in collection
-     *
      * @returns {boolean}
      */
-    saved() {
-        return this.constructor.collection
-                .find(item => this === item)
-                .length > 0;
+    isDirty() {
+        return Object.keys(this.dirty) > 0;
     }
 
     /**
-     * Remove model from collection
-     *
-     * @returns {Collection}
+     * @param field
+     * @returns {*}
      */
-    remove() {
-        if (!this.constructor.dispatcher.fire('deleting', this)) {
-            return this.constructor.collection;
+    getAttribute(field) {
+        if (this.hasAttribute(field)) {
+            var result = this._attributes.get(field);
+
+            // Timestamps
+            if (Arr.has(this.constructor.timestamps, field) && !(result instanceof DateTime)) {
+                result = DateTime.parse(result);
+
+                this._attributes.set(field, result);
+                this._original.set(field, result);
+            }
+
+            return result;
         }
+        return null;
+    }
 
-        var result = this.constructor.collection
-            .remove(item => item === this);
+    /**
+     * @param field
+     * @param value
+     * @returns {Model}
+     */
+    setAttribute(field, value) {
+        var result = [field, value];
+        var _$ = this;
 
-        this.constructor.dispatcher.fire('deleted', this);
+        if (this.hasAttribute(field)) {
+            if (!(result = this.constructor.events.fire('updating', this, field, value))) {
+                return this;
+            }
+            [_$, field, value] = result;
+
+            this._attributes.set(field, value);
+
+            this.constructor.events.fire('updated', this, field, value);
+            return this;
+        }
+        throw new ReferenceError(`Can not set new value. Model attribute ${this.constructor.name}.${field} not found`);
+    }
+
+    /**
+     * @param field
+     * @returns {boolean}
+     */
+    hasAttribute(field) {
+        return this._attributes.has(field);
+    }
+
+    /**
+     * Returns basic object with target fields
+     *
+     * @param field
+     * @returns {{}}
+     */
+    only(...field) {
+        var result = {};
+        var data = this.toObject();
+
+        for (var i = 0; i < field.length; i++) {
+            var key = field[i];
+            result[key] = data[key];
+        }
 
         return result;
     }
 
     /**
-     * Clone an object
+     * Returns basic object without target fields
      *
-     * @returns {Model}
+     * @param field
+     * @returns {{}}
      */
-    clone() {
-        var attributes = {};
-        for (var field in this.attributes) {
-            var value      = this.attributes[field];
-            var isClonable = !(typeof value === 'function' || typeof value === 'object');
+    except(...field) {
+        var result = {};
+        var data = this.toObject();
 
-            attributes[field] = isClonable ? value : JSON.parse(JSON.stringify(value));
+        for (var key in data) {
+            if (!Arr.has(field, key)) {
+                result[key] = data[key];
+            }
         }
 
-        var clone = new this.constructor({});
-        clone.fill(attributes);
-        return clone;
+        return result;
     }
 
-    //
-    // =============== SERIALIZATION ===============
-    //
+    /**
+     * @returns {Model}
+     */
+    save() {
+        if (this.isDirty()) {
+            if (!this.constructor.events.fire('saving', this)) {
+                return this;
+            }
+
+            this.sync();
+
+            this.constructor.events.fire('saved', this);
+        }
+
+        return this;
+    }
 
     /**
-     * Convert to Object instance
-     *
-     * @return {Array}
+     * @returns {{}}
      */
     toObject() {
-        return JSON.parse(this.toJson());
-    }
+        var result = {};
 
-    /**
-     * Convert to Json string
-     *
-     * @returns {string}
-     */
-    toJson() {
-        return JSON.stringify(this.attributes);
+        this._attributes.forEach((value, field) => {
+            result[field] = Serialize.toStructure(value);
+        });
+
+        return result;
     }
 }

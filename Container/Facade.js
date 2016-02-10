@@ -8,17 +8,17 @@ export default class Facade extends Container {
     /**
      * @type {Facade}
      */
-    static instance = null;
+    static _instance = null;
 
     /**
      * @type {boolean}
      */
-    static booted = false;
+    static _booted = false;
 
     /**
      * @type {Array}
      */
-    static providers = [];
+    static _providers = [];
 
     /**
      * @param providerClass
@@ -27,9 +27,16 @@ export default class Facade extends Container {
     static registerServiceProvider(providerClass:ServiceProvider) {
         var application = this.getInstance();
 
-        this.booted
-            ? application.resolve(providerClass).boot()
-            : this.providers.push(providerClass);
+        var provider = application.resolve(providerClass);
+        provider.register();
+
+        if (this._booted) {
+            provider.boot();
+
+        } else {
+
+            this._providers.push(providerClass);
+        }
 
         return this;
     }
@@ -38,11 +45,11 @@ export default class Facade extends Container {
      * @returns {Facade}
      */
     static getInstance() {
-        if (this.instance === null) {
-            this.instance                   = new this;
-            this.instance.resolved['app']   = this.instance;
+        if (this._instance === null) {
+            this._instance                   = new this;
+            this._instance._resolved['app']  = this._instance;
         }
-        return this.instance;
+        return this._instance;
     }
 
     /**
@@ -51,14 +58,14 @@ export default class Facade extends Container {
     static create() {
         var application = this.getInstance();
 
-        if (!this.booted) {
+        if (!this._booted) {
             var cls = null;
-            while (cls = this.providers.shift()) {
+            while (cls = this._providers.shift()) {
                 application.resolve(cls).boot();
             }
         }
 
-        this.booted = true;
+        this._booted = true;
 
         return application;
     }

@@ -28,4 +28,28 @@ export default class Arr {
 
         return result;
     }
+
+    /**
+     *
+     * @param haystack
+     * @param needle
+     * @returns {boolean}
+     */
+    static has(haystack, needle) {
+        for (var i = 0; i < haystack.length; i++) {
+            if (haystack[i] == needle) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param item
+     * @returns {Array}
+     */
+    static make(item) {
+        return item instanceof Array ? item : [item];
+    }
 }

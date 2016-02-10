@@ -7,12 +7,12 @@ export default class Container {
     /**
      * @type {{}}
      */
-    bindings = {};
+    _bindings = {};
 
     /**
      * @type {{}}
      */
-    resolved = {};
+    _resolved = {};
 
     /**
      * @param {String} alias
@@ -20,7 +20,7 @@ export default class Container {
      * @returns {Container}
      */
     bind(alias: String, target: Function) {
-        this.bindings[alias] = target;
+        this._bindings[alias] = target;
         return this;
     }
 
@@ -30,7 +30,7 @@ export default class Container {
      * @returns {Container}
      */
     singleton(alias: String, callback: Function) {
-        this.bindings[alias] = callback(this);
+        this._bindings[alias] = callback(this);
         return this;
     }
 
@@ -40,14 +40,14 @@ export default class Container {
      * @returns {*}
      */
     make(alias: String, ...args) {
-        if (!this.resolved[alias]) {
-            var target = this.bindings[alias];
-            this.resolved[alias] = target instanceof Function
+        if (!this._resolved[alias]) {
+            var target = this._bindings[alias];
+            this._resolved[alias] = target instanceof Function
                 ? this.resolve(target, ...args)
                 : target;
         }
 
-        return this.resolved[alias];
+        return this._resolved[alias];
     }
 
     /**
@@ -55,6 +55,9 @@ export default class Container {
      * @param args
      */
     resolve(cls: Function, ...args) {
+        if (cls == null) {
+            throw new TypeError('Can not resolve undefined class');
+        }
         /**
          * @param target
          * @param args
@@ -83,7 +86,6 @@ export default class Container {
                 };
             })(target[key], key);
         };
-
 
         if (cls[INJECT]) {
             args = getArguments(cls[INJECT]['class'], args);

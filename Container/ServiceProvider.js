@@ -10,14 +10,26 @@ export default class ServiceProvider {
     /**
      * @type {null|Container}
      */
-    app = null;
+    _app = null;
 
     /**
      * @param app
      */
     constructor(app:Container) {
-        this.app = app;
+        this._app = app;
     }
+
+    /**
+     * @returns {Container}
+     */
+    get app() {
+        return this._app;
+    }
+
+    /**
+     * Register method
+     */
+    register() {}
 
     /**
      * Boot event

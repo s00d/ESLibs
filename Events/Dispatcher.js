@@ -19,6 +19,7 @@ export default class Dispatcher {
     listen(name:String, callback:Function) {
         var event = new EventObject(this, name, callback);
         this.getHandlers(name).push(event);
+
         return event;
     }
 
@@ -32,24 +33,37 @@ export default class Dispatcher {
     }
 
     /**
+     * @returns {Dispatcher}
+     */
+    dispose() {
+        for (var i = 0; i < this.events.length; i++) {
+            this.events[i].remove();
+        }
+        this.events = [];
+        return this;
+    }
+
+    /**
      * @param name
      * @param args
-     * @returns {Array}
+     * @returns {boolean}
      */
     fire(name:String, ...args) {
-        var handlers    = this.getHandlers(name);
-        var optionsArgs = args;
+        this.getHandlers(name);
+
+        var handlers = this.getCompatibleEvents(name);
+        var result   = args;
 
         for (var i = 0; i < handlers.length; i++) {
-            var eventResponse = handlers[i].fire(...optionsArgs);
-            if (typeof eventResponse !== 'undefined') {
-                optionsArgs = eventResponse;
+            var eventResult = handlers[i].fire(...(result.concat([name])));
+            if (eventResult === false) {
+                return false;
+            } else if (typeof eventResult !== 'undefined') {
+                result = eventResult;
             }
         }
 
-        return optionsArgs.length === 1
-            ? optionsArgs[0]
-            : optionsArgs;
+        return result.length === 1 ? result[0] : result;
     }
 
     /**
@@ -60,6 +74,35 @@ export default class Dispatcher {
         if (!this.events[name]) {
             this.events[name] = [];
         }
+
         return this.events[name];
+    }
+
+    /**
+     * @param name
+     * @returns {Array}
+     */
+    getCompatibleEvents(name) {
+        var compatible = [];
+
+        Object.keys(this.events).forEach(event => {
+            var regexp = Dispatcher.createHandlerNameRegexp(event);
+            if (name.match(regexp)) {
+                compatible = compatible.concat(this.events[event]);
+            }
+        });
+
+        return compatible;
+    }
+
+    /**
+     * @param name
+     * @returns {RegExp}
+     */
+    static createHandlerNameRegexp(name) {
+        name = name
+            .replace(/[\-\[\]\/\{\}\(\)\+\?\.\\\^\$\|]/g, "\\$&")
+            .replace('*', '(.*?)');
+        return new RegExp(`^${name}$`, 'gi');
     }
 }

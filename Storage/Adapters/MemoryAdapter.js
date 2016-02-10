@@ -8,9 +8,9 @@ export default class MemoryAdapter extends AbstractAdapter {
     keys = new Set;
 
     /**
-     * @type {WeakMap}
+     * @type {Map}
      */
-    driver = new WeakMap;
+    driver = new Map;
 
     /**
      * @param {String} key
