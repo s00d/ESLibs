@@ -62,4 +62,15 @@ export default class Obj {
 
         return result;
     }
+
+    /**
+     * @param key
+     * @param value
+     * @returns {{}}
+     */
+    static make(key, value) {
+        var anonymous = {};
+        anonymous[key] = value;
+        return anonymous;
+    }
 }

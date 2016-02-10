@@ -2,6 +2,7 @@ import Str from "/Support/Str";
 import Arr from "/Support/Arr";
 import Obj from "/Support/Obj";
 import Regex from "/Support/Regex";
+import Dictionary from "/Translation/Dictionary";
 
 /**
  * Symfony and Laravel format compatible translator
@@ -16,13 +17,64 @@ export default class Translator {
     _texts = {};
 
     /**
+     * @type {{}}
+     * @private
+     */
+    _dictionaries = {};
+
+    /**
+     * @type {string}
+     * @private
+     */
+    _locale = 'en';
+
+    /**
+     * @param locale
+     */
+    constructor(locale = 'en') {
+        this.locale = locale;
+    }
+
+    /**
+     * @param {String} name
+     */
+    set locale(name:String) {
+        this._locale = name;
+        if (!this._dictionaries[name]) {
+            this._dictionaries[name] = new Dictionary;
+        }
+    }
+
+    /**
+     * @returns {String}
+     */
+    get locale() : String {
+        return this._locale;
+    }
+
+    /**
+     * @returns {*}
+     */
+    get dictionary() {
+        return this._dictionaries[this._locale];
+    }
+
+    /**
      * @param {object} data
      * @param {string} prefix
      * @returns {Translator}
      */
     register(data = {}, prefix = '') {
-        this._texts = Obj.merge(this._texts, Obj.reduce(data, prefix));
+        this.dictionary.addMany(data, prefix);
         return this;
+    }
+
+    /**
+     * @param key
+     * @returns {string|Object|array}
+     */
+    get(key) {
+        return this.dictionary.get(key);
     }
 
     /**
@@ -41,9 +93,9 @@ export default class Translator {
      * @returns {string}
      */
     translate(text:String, args:Object = {}):String {
-        var result = this.replace(text || '', this.dictionary(text, args));
+        var result = this.replace(text || '', this.createDictionary(text, args));
 
-        if (Object.keys(this.dictionary(result, args)).length > 0) {
+        if (Object.keys(this.createDictionary(result, args)).length > 0) {
             return this.translate(result, args);
         }
 
@@ -55,10 +107,10 @@ export default class Translator {
      * @param args
      * @returns {{}}
      */
-    dictionary(text, args = {}) {
+    createDictionary(text, args = {}) {
         var result   = {};
         var patterns = (text.match(this.keyRegexp('[a-z0-9\\.]+', false)) || []);
-        args         = Obj.merge(this._texts, args);
+        args         = this.dictionary.withAttributes(args);
 
         for (var i = 0; i < patterns.length; i++) {
             var key = patterns[i].trim().substr(1);
@@ -93,7 +145,7 @@ export default class Translator {
      * @param {number|object} args
      * @returns {string}
      */
-    plural(text:String, args = {}):String {
+    choice(text:String, args = {}):String {
         if (typeof args === 'string' || typeof args === 'number') {
             args = {count: parseInt(args || 0)};
         }
@@ -105,7 +157,7 @@ export default class Translator {
 
         var matches = [];
         for (var i = 0, length = texts.length; i < length; i++) {
-            matches = (/^{([0-9]+)}\s(.*?)$/g).exec(texts[i]);
+            matches = (/^(?:{|\[)([0-9]+)(?:}|\])\s(.*?)$/g).exec(texts[i]);
             if (matches && count === parseInt(matches[1])) {
                 return matches[2];
             }
