@@ -20,7 +20,20 @@ export default class DateTimeZone {
             throw new Error(`Location "${name}" not found.`);
         }
 
-        return new this(location.offset)
+        return this.seconds(location.offset)
+    }
+
+    /**
+     * @param {string|number|DateTimeZone} value milliseconds
+     * @returns {DateTimeZone}
+     */
+    static create(value) {
+        if (typeof value === 'object' && value instanceof DateTimeZone) {
+            return new this(value.milliseconds);
+        } else if (parseInt(value) == value) {
+            return new this(parseInt(value));
+        }
+        return this.createFromLocation(value);
     }
 
     /**
@@ -31,14 +44,35 @@ export default class DateTimeZone {
     }
 
     /**
-     * @param {string|number} value
+     * @param milliseconds
      * @returns {DateTimeZone}
      */
-    static create(value) {
-        if (parseInt(value) == value) {
-            return new this(parseInt(value));
-        }
-        return this.createFromLocation(value);
+    static milliseconds(milliseconds = 0) {
+        return new this(milliseconds);
+    }
+
+    /**
+     * @param seconds
+     * @returns {DateTimeZone}
+     */
+    static seconds(seconds = 0) {
+        return new this(seconds * TIME_SECOND);
+    }
+
+    /**
+     * @param minutes
+     * @returns {DateTimeZone}
+     */
+    static minutes(minutes = 0) {
+        return new this(minutes * TIME_MINUTE);
+    }
+
+    /**
+     * @param hours
+     * @returns {DateTimeZone}
+     */
+    static hours(hours = 0) {
+        return new this(hours * TIME_HOUR);
     }
 
     /**
@@ -49,10 +83,10 @@ export default class DateTimeZone {
     _offset = 0;
 
     /**
-     * @param {number} seconds
+     * @param {number} milliseconds
      */
-    constructor(seconds = 0) {
-        this._offset = seconds * TIME_SECOND;
+    constructor(milliseconds = 0) {
+        this._offset = milliseconds;
     }
 
     /**
