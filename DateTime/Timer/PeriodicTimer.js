@@ -8,9 +8,12 @@ import DateInterval, {
     TIME_MONTH,
     TIME_YEAR
 } from "/DateTime/DateInterval";
+import AbstractTimer from "/DateTime/Timer/AbstractTimer";
 
-
-export default class TimerEvent {
+/**
+ * PeriodicTimer instance
+ */
+export default class PeriodicTimer extends AbstractTimer {
     /**
      * @type {DateInterval}
      * @private
@@ -28,12 +31,6 @@ export default class TimerEvent {
      * @private
      */
     _lastTouch = DateInterval.milliseconds(Date.now());
-
-    /**
-     * @type {Function}
-     * @private
-     */
-    _callback = (()=>null);
 
     /**
      * @type {boolean}
@@ -62,13 +59,13 @@ export default class TimerEvent {
     /**
      * @param {Function} callback
      */
-    constructor(callback) {
+    constructor(callback:Function) {
+        super(callback);
         this.touch();
-        this._callback  = callback;
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     once() {
         return this.repeats(1);
@@ -76,7 +73,7 @@ export default class TimerEvent {
 
     /**
      * @param count
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     repeats(count = 1) {
         this._invokesCount = count;
@@ -84,14 +81,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     unlimitedRepeats() {
         return this.repeats(-1);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     withoutOverlapping() {
         this._overlapping = false;
@@ -99,7 +96,7 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     withOverlapping() {
         this._overlapping = true;
@@ -115,7 +112,7 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     touch() {
         var diff = this._lastTouch.subMilliseconds(Date.now()).milliseconds;
@@ -128,7 +125,7 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     dispose() {
         this._destroy = true;
@@ -151,15 +148,15 @@ export default class TimerEvent {
 
     /**
      * @param args
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     fire(...args) {
-        this._callback(...args);
+        this.callback(...args);
         return this;
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     tick() {
 
@@ -191,7 +188,7 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     compensateTimeout() {
         this._remainder.set(
@@ -208,7 +205,7 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     resetTimeout() {
         this._remainder.set(this._delay);
@@ -232,7 +229,7 @@ export default class TimerEvent {
 
     /**
      * @param milliseconds
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyMillisecond(milliseconds = 1) {
         this._delay.set(TIME_MILLISECOND * milliseconds);
@@ -241,14 +238,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHalfMillisecond() {
         return this.everyMillisecond(0.5);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyTwoMillisecond() {
         return this.everyMillisecond(2);
@@ -256,7 +253,7 @@ export default class TimerEvent {
 
     /**
      * @param seconds
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everySecond(seconds = 1) {
         this._delay.set(TIME_SECOND * seconds);
@@ -265,14 +262,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHalfSecond() {
         return this.everySecond(0.5);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyTwoSecond() {
         return this.everySecond(2);
@@ -280,7 +277,7 @@ export default class TimerEvent {
 
     /**
      * @param minutes
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyMinute(minutes = 1) {
         this._delay.set(TIME_MINUTE * minutes);
@@ -289,14 +286,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHalfMinute() {
         return this.everyMinute(0.5);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyTwoMinute() {
         return this.everyMinute(2);
@@ -304,7 +301,7 @@ export default class TimerEvent {
 
     /**
      * @param hours
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHour(hours = 1) {
         this._delay.set(TIME_HOUR * hours);
@@ -313,14 +310,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHalfHour() {
         return this.everyHour(0.5);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyTwoHour() {
         return this.everyHour(2);
@@ -328,7 +325,7 @@ export default class TimerEvent {
 
     /**
      * @param weeks
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyWeek(weeks = 1) {
         this._delay.set(TIME_WEEK * weeks);
@@ -337,14 +334,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHalfWeek() {
         return this.everyWeek(0.5);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyTwoWeek() {
         return this.everyWeek(2);
@@ -352,7 +349,7 @@ export default class TimerEvent {
 
     /**
      * @param months
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyMonth(months = 1) {
         this._delay.set(TIME_MONTH * months);
@@ -361,14 +358,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHalfMonth() {
         return this.everyMonth(0.5);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyTwoMonth() {
         return this.everyMonth(2);
@@ -376,7 +373,7 @@ export default class TimerEvent {
 
     /**
      * @param years
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyYear(years = 1) {
         this._delay.set(TIME_YEAR * years);
@@ -385,14 +382,14 @@ export default class TimerEvent {
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyHalfYear() {
         return this.everyYear(0.5);
     }
 
     /**
-     * @returns {TimerEvent}
+     * @returns {PeriodicTimer}
      */
     everyTwoYear() {
         return this.everyYear(2);

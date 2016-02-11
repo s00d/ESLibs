@@ -1,7 +1,12 @@
-import TimerEvent from "/DateTime/Timer/TimerEvent";
+import LockableTimer from "/DateTime/Timer/LockableTimer";
+import PeriodicTimer from "/DateTime/Timer/PeriodicTimer";
+import AbstractTimer from "/DateTime/Timer/AbstractTimer";
 import DateInterval, {TIME_MILLISECOND} from "/DateTime/DateInterval";
 
-export default class Timer {
+/**
+ * Timer loop
+ */
+export default class Loop {
     /**
      * @type {boolean}
      * @private
@@ -27,44 +32,55 @@ export default class Timer {
     _timeout = null;
 
     /**
-     * @type {Array|TimerEvent}
+     * @type {Array|AbstractTimer[]|LockableTimer[]|PeriodicTimer[]}
      * @private
      */
     _events = [];
 
     /**
      * @param {Function} callback
-     * @returns {TimerEvent}
+     * @returns {AbstractTimer|PeriodicTimer}
      */
-    subscribe(callback:Function) {
-        var event = new TimerEvent(callback);
+    subscribe(callback:Function) : PeriodicTimer {
+        var event = new PeriodicTimer(callback);
         this.attach(event);
         return event;
     }
 
     /**
-     * @param {TimerEvent} timerEvent
-     * @returns {Timer}
+     * @param {Function} callback
+     * @returns {LockableTimer|AbstractTimer|PeriodicTimer}
      */
-    attach(timerEvent:TimerEvent) {
-        this._events.push(timerEvent);
+    once(callback:Function) : PeriodicTimer {
+        var event = new LockableTimer(callback);
+        this.attach(event);
+        return event;
+    }
+
+    /**
+     * @param {AbstractTimer|LockableTimer|PeriodicTimer} timer
+     * @returns {Loop}
+     */
+    attach(timer:AbstractTimer) : Loop {
+        this._events.push(timer);
         return this;
     }
 
     /**
-     * @returns {Timer}
+     * @returns {Loop}
      */
-    start() {
+    start() : Loop {
         this._stop = false;
         this._lastTick.set(Date.now());
         this._loop();
+
         return this;
     }
 
     /**
-     * @returns {Timer}
+     * @returns {Loop}
      */
-    stop() {
+    stop() : Loop {
         if (this._timeout) {
             clearTimeout(this._timeout);
             this._timeout = null;
@@ -76,22 +92,22 @@ export default class Timer {
     /**
      * @returns {number|DateInterval}
      */
-    get interval() {
+    get interval() : DateInterval {
         return this._defaultInterval;
     }
 
     /**
      * @param {number|DateInterval} value
      */
-    set interval(value) {
+    set interval(value:DateInterval) {
         this._defaultInterval.set(value);
     }
 
     /**
-     * @returns {Timer}
+     * @returns {Loop}
      * @private
      */
-    _loop() {
+    _loop() : Loop {
         // Timeout infelicity
         var infelicity = this._lastTick
             .subMilliseconds(Date.now() - this.interval.milliseconds)
