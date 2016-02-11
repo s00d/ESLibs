@@ -28,4 +28,31 @@ export default class Str {
                     : 2
         ];
     }
+
+    /**
+     * @param value
+     * @param count
+     * @returns {string}
+     */
+    static repeat(value = '-', count = 1) {
+        var result = '';
+        for (var i = 0; i < count; i++) {
+            result += value.toString();
+        }
+        return result;
+    }
+
+    /**
+     * @param value
+     * @param decimals
+     * @returns {Array.<T>|T[]}
+     */
+    static zeroFirst(value, decimals = 2) {
+        value = value.toString();
+        if (value.length >= decimals) {
+            return value;
+        }
+
+        return this.repeat('0', decimals - value.length) + value;
+    }
 }
