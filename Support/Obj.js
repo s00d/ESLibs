@@ -69,8 +69,33 @@ export default class Obj {
      * @returns {{}}
      */
     static make(key, value) {
-        var anonymous = {};
+        var anonymous  = {};
         anonymous[key] = value;
         return anonymous;
+    }
+
+    /**
+     *
+     * @param object
+     * @returns {Array}
+     */
+    static methods(object) {
+        return Object.getOwnPropertyNames(object.__proto__);
+    }
+
+    /**
+     * @param object
+     * @returns {Array}
+     */
+    static properties(object) {
+        return Reflect.ownKeys(object);
+    }
+
+    /**
+     * @param object
+     * @returns {T[]|Array[]|Array.<T>}
+     */
+    static getInterface(object) {
+        return this.properties(object).concat(this.methods(object));
     }
 }
