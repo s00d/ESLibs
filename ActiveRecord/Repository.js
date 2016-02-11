@@ -8,6 +8,75 @@ import {default as Storage} from "/Storage/Repository";
 /**
  *
  */
+class RepositoryResponse {
+    /**
+     * @type {null|Model}
+     * @private
+     */
+    _model = null;
+
+    /**
+     * @type {{}|[]}
+     * @private
+     */
+    _response = {};
+
+    /**
+     * @param model
+     * @param response
+     */
+    constructor(model:Model, response) {
+        this._model = model;
+        this._response = response;
+    }
+
+    /**
+     * @returns {Collection}
+     */
+    toCollection() {
+        var result = new Collection([]);
+        var items  = this.toArray();
+        for (var i = 0; i < items.length; i++) {
+            result.push(this._model.create(items[i]));
+        }
+        return result;
+    }
+
+    /**
+     * @returns {Model}
+     */
+    toModel() {
+        return this._model.create(this.response);
+    }
+
+    /**
+     * @returns {[]}
+     */
+    toArray() {
+        if (this._response instanceof Array) {
+            return this._response;
+        }
+        return [this._response];
+    }
+
+    /**
+     * @returns {{}|*[]}
+     */
+    get response() {
+        return this._response;
+    }
+
+    /**
+     * @returns {string}
+     */
+    toString() {
+        return JSON.stringify(this.response);
+    }
+}
+
+/**
+ *
+ */
 export default class Repository {
     /**
      * @type {WeakMap<Function, Repository>|WeakMap}
@@ -130,7 +199,7 @@ export default class Repository {
      * @returns {Model}
      */
     async get(args = {}) {
-        return this.model.create(await this.request('show', args));
+        return (await this.request('show', args)).toModel();
     }
 
     /**
@@ -138,18 +207,13 @@ export default class Repository {
      * @returns {Collection|Array[]|Model[]}
      */
     async index(args = {}) {
-        var response = new Collection();
-        var items    = await this.request('index', args);
-        for (var i = 0; i < items.length; i++) {
-            response.push(this.model.create(items[i]));
-        }
-
-        return response;
+        return (await this.request('index', args)).toCollection();
     }
 
     /**
      * @param model
      * @param args
+     * @returns {RepositoryResponse}
      */
     async save(model:Model, args = {}) {
         return this.saveData(
@@ -159,7 +223,7 @@ export default class Repository {
 
     /**
      * @param args
-     * @returns {*}
+     * @returns {RepositoryResponse}
      */
     async saveData(args = {}) {
         return await this.request('update', args);
@@ -188,7 +252,7 @@ export default class Repository {
      * @param route
      * @param args
      * @param options
-     * @returns {*}
+     * @returns {RepositoryResponse}
      */
     async request(route, args = {}, options = {}) {
         var storage    = this.getStorage();
@@ -197,17 +261,22 @@ export default class Repository {
         var key        = `${route}/${args.id || JSON.stringify(args)}`;
         options.method = data.method || 'get';
 
+        var result = null;
+
         if (options.method !== 'get') {
             storage.clear();
-            return await (await ajax.request(data.url, args, options)).json();
+            result = await (await ajax.request(data.url, args, options)).json();
+        } else {
+            if (storage.has(key)) {
+                result = storage.get(key);
+            } else {
+                result = await (await ajax.request(data.url, args, options)).json();
+                storage.set(key, result);
+            }
+
         }
 
-        if (!storage.has(key)) {
-            var result = await (await ajax.request(data.url, args, options)).json();
-            storage.set(key, result);
-        }
-
-        return storage.get(key);
+        return new RepositoryResponse(this.model, result);
     }
 
     /**
