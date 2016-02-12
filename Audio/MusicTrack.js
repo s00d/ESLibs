@@ -28,7 +28,7 @@ export default class MusicTrackTrack extends SoundTrack {
     /**
      * @returns {MusicTrack}
      */
-    play():this {
+    play() {
         for (var i = 0, len = this.constructor._tracks.length; i < len; i++) {
             this.constructor._tracks[i].stop();
         }

@@ -116,7 +116,7 @@ export default class SoundTrack {
     /**
      * @returns {SoundTrack}
      */
-    play():this {
+    play() {
         this._audio.play();
 
         var isPause = this._state === STATE_PAUSE;
@@ -134,7 +134,7 @@ export default class SoundTrack {
     /**
      * @returns {SoundTrack}
      */
-    pause():this {
+    pause() {
         this._audio.pause();
 
         this._state = STATE_PAUSE;
@@ -145,7 +145,7 @@ export default class SoundTrack {
     /**
      * @returns {SoundTrack}
      */
-    stop():this {
+    stop() {
         this._audio.pause();
         this._audio.currentTime = 0;
 
