@@ -17,15 +17,15 @@ export default class Display {
     constructor() {
         EventListener
             .create('focus')
-            .subscribe(e => this._dispatcher.fire('focus', e));
+            .listen(e => this._dispatcher.fire('focus', e));
 
         EventListener
             .create('blur')
-            .subscribe(e => this._dispatcher.fire('blur', e));
+            .listen(e => this._dispatcher.fire('blur', e));
 
         EventListener
             .create(['DOMContentLoaded', 'load', 'resize'])
-            .subscribe(e => {
+            .listen(e => {
                 this._dispatcher.fire('resize', {
                     width:  window.innerWidth ||
                             document.documentElement.clientWidth ||
@@ -39,7 +39,7 @@ export default class Display {
 
         EventListener
             .create(['DOMContentLoaded', 'load', 'resize', 'scroll'])
-            .subscribe(event => {
+            .listen(event => {
                 this._dispatcher.fire('scroll', event);
             });
     }
@@ -164,7 +164,7 @@ export default class Display {
                 ['webkitfullscreenchange', 'mozfullscreenchange', 'fullscreenchange', 'MSFullscreenChange'],
                 element
             )
-            .subscribe(e => {
+            .listen(e => {
                 callback(e);
             });
     }

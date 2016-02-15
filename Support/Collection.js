@@ -1,6 +1,6 @@
 import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
-import EventObject from "/Events/EventObject";
+import EventListener from "/Events/EventListener";
 
 /**
  * Items collection
@@ -44,7 +44,7 @@ export default class Collection {
     /**
      * @param event
      * @param callback
-     * @returns {EventObject}
+     * @returns {EventListener}
      */
     on(event, callback:Function) {
         return this.events.listen(event, callback);
@@ -63,7 +63,7 @@ export default class Collection {
      * @param event
      * @returns {Dispatcher}
      */
-    off(event:EventObject) {
+    off(event:EventListener) {
         return event.remove();
     }
 

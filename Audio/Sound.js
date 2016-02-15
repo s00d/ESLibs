@@ -9,7 +9,7 @@ const STATE_END   = Symbol('ended');
 /**
  *
  */
-export default class SoundTrack {
+export default class Sound {
     /**
      * @type {number}
      * @private
@@ -18,9 +18,9 @@ export default class SoundTrack {
 
     /**
      * @param value
-     * @returns {SoundTrack}
+     * @returns {Sound}
      */
-    static setMasterVolume(value = 1):SoundTrack {
+    static setMasterVolume(value = 1):Sound {
         this._masterVolume = value;
         return this;
     }
@@ -114,7 +114,7 @@ export default class SoundTrack {
     }
 
     /**
-     * @returns {SoundTrack}
+     * @returns {Sound}
      */
     play():this {
         this._audio.play();
@@ -132,7 +132,7 @@ export default class SoundTrack {
     }
 
     /**
-     * @returns {SoundTrack}
+     * @returns {Sound}
      */
     pause():this {
         this._audio.pause();
@@ -143,7 +143,7 @@ export default class SoundTrack {
     }
 
     /**
-     * @returns {SoundTrack}
+     * @returns {Sound}
      */
     stop():this {
         this._audio.pause();

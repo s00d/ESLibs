@@ -1,16 +1,12 @@
 import Pool from "/Audio/Pool";
-import Sound from "/Audio/MusicTrackTrack";
+import Sound from "/Audio/Sound";
 import Dispatcher from "/Events/Dispatcher";
 
-const STATE_STOP  = Symbol('stopping');
-const STATE_PLAY  = Symbol('playing');
-const STATE_PAUSE = Symbol('paused');
-const STATE_END   = Symbol('ended');
 
 /**
  *
  */
-export default class MusicTrackTrack extends SoundTrack {
+export default class Music extends Sound {
     /**
      * @type {Array}
      * @private
@@ -26,7 +22,7 @@ export default class MusicTrackTrack extends SoundTrack {
     }
 
     /**
-     * @returns {MusicTrack}
+     * @returns {Music}
      */
     play():this {
         for (var i = 0, len = this.constructor._tracks.length; i < len; i++) {
