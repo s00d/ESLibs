@@ -2,7 +2,7 @@ import Arr from "/Support/Std/Arr";
 import DateTime from "/DateTime/DateTime";
 import Dispatcher from "/Events/Dispatcher";
 import Collection from "/Support/Collection";
-import {Serialized} from "/Support/Serialize";
+import {toObject} from "/Support/Interfaces/Serializable";
 
 /**
  * Model
@@ -336,7 +336,7 @@ export default class Model {
      */
     only(...field) {
         var result = {};
-        var data = this.toObject();
+        var data = this[toObject]();
 
         for (var i = 0; i < field.length; i++) {
             var key = field[i];
@@ -354,7 +354,7 @@ export default class Model {
      */
     except(...field) {
         var result = {};
-        var data = this.toObject();
+        var data = this[toObject]();
 
         for (var key in data) {
             if (!Arr.has(field, key)) {
@@ -385,7 +385,7 @@ export default class Model {
     /**
      * @returns {{}}
      */
-    [Serialized]() {
+    [toObject]() {
         var output = {};
         Obj.each(this._attributes, (k, v) => {
             output[k] = this.getAttribute(k);
