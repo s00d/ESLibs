@@ -2,7 +2,9 @@ import Arr from "/Support/Std/Arr";
 import DateTime from "/DateTime/DateTime";
 import Dispatcher from "/Events/Dispatcher";
 import Collection from "/Support/Collection";
+import Repository from "/Storage/Repository";
 import {toObject} from "/Support/Interfaces/Serializable";
+import MemoryAdapter from "/Storage/Adapters/MemoryAdapter";
 
 /**
  * Model
@@ -73,6 +75,23 @@ export default class Model {
             this._events.set(this, new Dispatcher);
         }
         return this._events.get(this);
+    }
+
+    /**
+     * @type {WeakMap}
+     */
+    static _cache = new WeakMap();
+
+    /**
+     * @returns {Repository}
+     */
+    static get cache() {
+        this.bootIfNotBooted();
+
+        if (!this._cache.has(this)) {
+            this._cache.set(this, new Repository(new MemoryAdapter('cache:')));
+        }
+        return this._cache.get(this);
     }
 
     /**
