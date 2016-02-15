@@ -1,9 +1,8 @@
-import Arr from "/Support/Arr";
+import Arr from "/Support/Std/Arr";
 import DateTime from "/DateTime/DateTime";
-import {bind} from "/Support/helpers";
-import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
 import Collection from "/Support/Collection";
+import {Serialized} from "/Support/Serialize";
 
 /**
  * Model
@@ -286,7 +285,7 @@ export default class Model {
 
             // Timestamps
             if (Arr.has(this.constructor.timestamps, field) && !(result instanceof DateTime)) {
-                result = DateTime.parse(result);
+                result = new DateTime(result);
 
                 this._attributes.set(field, result);
                 this._original.set(field, result);
@@ -294,6 +293,7 @@ export default class Model {
 
             return result;
         }
+
         return null;
     }
 
@@ -385,13 +385,11 @@ export default class Model {
     /**
      * @returns {{}}
      */
-    toObject() {
-        var result = {};
-
-        this._attributes.forEach((value, field) => {
-            result[field] = Serialize.toStructure(value);
+    [Serialized]() {
+        var output = {};
+        Obj.each(this._attributes, (k, v) => {
+            output[k] = this.getAttribute(k);
         });
-
-        return result;
+        return output;
     }
 }

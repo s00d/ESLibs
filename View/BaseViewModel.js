@@ -1,5 +1,5 @@
 import Display from "/Support/Display";
-import Abstract from "/Support/Abstract";
+import Abstract from "/Support/Access/Abstract";
 import Dispatcher from "/Events/Dispatcher";
 import Container from "/Container/Container";
 

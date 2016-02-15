@@ -1,4 +1,4 @@
-import Private from "/Support/Private";
+import Private from "/Support/Access/Private";
 import PeriodicTimer from "/DateTime/Timer/PeriodicTimer";
 
 export default class LockableTimer extends PeriodicTimer {

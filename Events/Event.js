@@ -1,4 +1,4 @@
-import Str from "/Support/Str";
+import Str from "/Support/Std/Str";
 
 export default class Event {
     /**

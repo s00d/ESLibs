@@ -1,4 +1,4 @@
-import Obj from "/Support/Obj";
+import Obj from "/Support/Std/Obj";
 
 export default class Dictionary {
     /**

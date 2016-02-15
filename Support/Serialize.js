@@ -1,3 +1,7 @@
+import Obj from "/Support/Std/Obj";
+
+export const Serialized = Symbol('serialized');
+
 export default class Serialize {
     /**
      * @param value
@@ -7,7 +11,7 @@ export default class Serialize {
         if (typeof(value) === 'number') {
             return value.toString();
         }
-        var result = this.toStructure(value);
+        var result = this.serialize(value);
         return result ? result.toString() : '';
     }
 
@@ -17,39 +21,27 @@ export default class Serialize {
      */
     static toJson(value) {
         return JSON.stringify(
-            this.toStructure(value)
+            this.serialize(value)
         );
     }
 
     /**
-     * @param value
+     * @param target
      * @returns {*}
      */
-    static toStructure(value) {
-        var result = value;
+    static serialize(target:Object) {
+        var result = {};
 
-        if (typeof value !== 'object' || value instanceof Array) {
-            result = value;
-
-        } else if (value != null && typeof value.toObject === 'function') {
-            result = value.toObject();
-
-        } else if (value != null && typeof value.toArray === 'function') {
-            result = value.toArray();
-
-        } else if (value != null) {
-            if (value.name === 'Object') {
-                result = {};
-                for (var key in value) { result[key] = this.toStructure(value[key]); }
-            } else {
-                result = value.toString();
-            }
+        if (typeof target === 'object' && target[Serialized] instanceof Function) {
+            result = Obj.map(target[Serialized](), (key, value, s) => {
+                if (value instanceof Object) {
+                    return this.serialize(value);
+                } else {
+                    return value;
+                }
+            })
         } else {
-            result = value;
-        }
-
-        if (typeof result === 'function') {
-            return result();
+            return target;
         }
 
         return result;
