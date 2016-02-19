@@ -2,8 +2,6 @@ import Ajax from "/Request/Ajax";
 import Inject from "/Container/Inject";
 import Model from "/ActiveRecord/Model";
 import Collection from "/Support/Collection";
-import MemoryAdapter from "/Storage/Adapters/MemoryAdapter";
-import {default as Storage} from "/Storage/Repository";
 
 /**
  *
@@ -56,7 +54,7 @@ class RepositoryResponse {
         if (this._response instanceof Array) {
             return this._response;
         }
-        return [this._response];
+        return Object.values(this._response);
     }
 
     /**
@@ -110,36 +108,12 @@ export default class Repository {
     };
 
     /**
-     * @type {Storage}
-     */
-    storage = null;
-
-    /**
      * @param {Model} model
      * @param {object} routes
      */
     constructor(model:Model, routes = {}) {
         this.model = model;
         this.setRoutes(routes);
-    }
-
-    /**
-     * @returns {Storage}
-     */
-    getStorage() {
-        if (this.storage === null) {
-            this.storage = new Storage(new MemoryAdapter(`${this.model.name}:`));
-        }
-        return this.storage;
-    }
-
-    /**
-     * @param {Storage} storage
-     * @returns {Repository}
-     */
-    setStorage(storage:Storage) {
-        this.storage = storage;
-        return this;
     }
 
     /**
@@ -255,26 +229,11 @@ export default class Repository {
      * @returns {RepositoryResponse}
      */
     async request(route, args = {}, options = {}) {
-        var storage    = this.getStorage();
         var ajax       = App.make('ajax');
         var data       = this.getRoute(route);
-        var key        = `${route}/${args.id || JSON.stringify(args)}`;
         options.method = data.method || 'get';
 
-        var result = null;
-
-        if (options.method !== 'get') {
-            storage.clear();
-            result = await (await ajax.request(data.url, args, options)).json();
-        } else {
-            if (storage.has(key)) {
-                result = storage.get(key);
-            } else {
-                result = await (await ajax.request(data.url, args, options)).json();
-                storage.set(key, result);
-            }
-
-        }
+        var result = await (await ajax.request(data.url, args, options)).json();
 
         return new RepositoryResponse(this.model, result);
     }
