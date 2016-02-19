@@ -47,23 +47,39 @@ export default class Dispatcher {
     /**
      * @param name
      * @param args
-     * @returns {boolean}
+     * @returns {Dispatcher}
      */
-    fire(name:String, ...args) {
+    fire(name:string, ...args) {
+        var callback = (() => null);
+        return this.fireWithOverlap(name, args, callback);
+    }
+
+    /**
+     * @param {string} name
+     * @param {Array} args
+     * @param {Function} callback
+     * @returns {Dispatcher}
+     */
+    fireWithOverlap(name:string, args:Array = [], callback:Function) {
         this._getHandlers(name);
 
         var handlers = this._getCompatibleEvents(name);
-        var result   = args;
 
         for (var i = 0; i < handlers.length; i++) {
             let event = args.length === 1 && args[0] instanceof FiredEvent
                 ? args[0]
                 : new FiredEvent(name, args);
 
-            handlers[i].fire(event);
+            event.onUpdate(callback);
+
+            var firedResult = handlers[i].fire(event);
+
+            if (firedResult !== undefined) {
+                callback(firedResult);
+            }
         }
 
-        return result.length === 1 ? result[0] : result;
+        return this;
     }
 
     /**

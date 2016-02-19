@@ -120,6 +120,17 @@ export default class Model {
     }
 
     /**
+     * @param event
+     * @param args
+     * @param callback
+     * @returns {Dispatcher}
+     */
+    static fireWithOverlap(event, args:Array = [], callback:Function) {
+        this.bootIfNotBooted();
+        return this.events.fireWithOverlap(event, args, callback);
+    }
+
+    /**
      * Boot dynamic relations and call static constructor once for every children
      *
      * @returns {Model}
@@ -171,15 +182,7 @@ export default class Model {
      * @returns {Model}
      */
     static create(attributes = {}) {
-        if (!(attributes = this.fire('creating', attributes))) {
-            return this;
-        }
-
-        var instance = new this(attributes);
-
-        this.fire('created', instance);
-
-        return instance;
+        return new this(attributes);
     }
 
     /**
@@ -199,7 +202,14 @@ export default class Model {
      */
     constructor(_attributes = {}) {
         this.constructor.bootIfNotBooted();
+
+        this.constructor.fireWithOverlap('creating', [_attributes], (data) => {
+            _attributes = data;
+        });
+
         this.fill(_attributes);
+
+        this.constructor.fire('created', this);
     }
 
     /**
@@ -239,6 +249,9 @@ export default class Model {
      */
     fill(_attributes = {}) {
         for (let field in _attributes) {
+            let result = _attributes[field];
+
+            // Create getter
             if (!this.hasAttribute(field) && !this[field]) {
                 Object.defineProperty(this, field, {
                     get: () => this.getAttribute(field),
@@ -246,8 +259,15 @@ export default class Model {
                 });
             }
 
+
+            // Timestamps
+            if (Arr.has(this.constructor.timestamps, field) && !(result instanceof DateTime)) {
+                result = new DateTime(result);
+            }
+
             this._attributes.set(field, _attributes[field]);
             this.setAttribute(field, _attributes[field]);
+
             this.sync();
         }
         return this;
@@ -301,17 +321,7 @@ export default class Model {
      */
     getAttribute(field) {
         if (this.hasAttribute(field)) {
-            var result = this._attributes.get(field);
-
-            // Timestamps
-            if (Arr.has(this.constructor.timestamps, field) && !(result instanceof DateTime)) {
-                result = new DateTime(result);
-
-                this._attributes.set(field, result);
-                this._original.set(field, result);
-            }
-
-            return result;
+            return this._attributes.get(field);
         }
 
         return null;
@@ -323,20 +333,16 @@ export default class Model {
      * @returns {Model}
      */
     setAttribute(field, value) {
-        var result = [field, value];
-        var _$ = this;
-
         if (this.hasAttribute(field)) {
-            if (!(result = this.constructor.events.fire('updating', this, field, value))) {
-                return this;
-            }
-            [_$, field, value] = result;
+            this.constructor.events.fire('updating', this, field, value);
 
             this._attributes.set(field, value);
 
             this.constructor.events.fire('updated', this, field, value);
+
             return this;
         }
+
         throw new ReferenceError(`Can not set new value. Model attribute ${this.constructor.name}.${field} not found`);
     }
 
@@ -408,7 +414,7 @@ export default class Model {
     [toObject]() {
         var output = {};
         Obj.each(this._attributes, (k, v) => {
-            output[k] = this.getAttribute(k);
+            output[k] = this._attributes.get(k);
         });
         return output;
     }
