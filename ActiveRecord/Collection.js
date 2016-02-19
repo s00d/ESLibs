@@ -1,6 +1,6 @@
-import Arr from "/Support/Arr";
-import {bind} from "/Support/helpers";
+import Arr from "/Support/Std/Arr";
 import Model from "/ActiveRecord/Model";
+import Context from "/Support/Std/Context";
 import {default as BaseCollection} from "/Support/Collection";
 
 /**
@@ -29,7 +29,7 @@ export default class Collection extends Model {
                 if (collection[method] instanceof Function && typeof this[method] == 'undefined') {
                     Object.defineProperty(this, method, {
                         enumerable: true,
-                        get:        () => bind(collection[method], collection)
+                        get:        () => Context.bind(collection[method], collection)
                     })
                 }
             }

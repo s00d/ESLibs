@@ -1,9 +1,13 @@
 export default class Obj {
     /**
-     * @param object
-     * @returns {*}
+     * @param {Object} object
+     * @returns {Object}
      */
-    static clone(object) {
+    static clone(object):Object {
+        if (Object.assign) {
+            return Object.assign({}, object);
+        }
+
         var output = JSON.parse(JSON.stringify(object));
 
         var cloneFunctions = (source, target) => {
@@ -62,6 +66,60 @@ export default class Obj {
 
         return result;
     }
+
+
+    /**
+     * @param {Object} source
+     * @param {Function} everyValue
+     * @returns {*}
+     */
+    static each(source:Object, everyValue:Function) {
+        return this.map(source, (k, v, s) => {
+            everyValue(k, v, s);
+            return v;
+        });
+    }
+
+    /**
+     * @param {Object} source
+     * @param {Function} everyValue
+     * @returns {*}
+     */
+    static map(source:Object, everyValue:Function) {
+        var output = {};
+        if (typeof source !== 'object') {
+            return source;
+        }
+
+
+        if (source[Symbol.iterator] != null) {
+            for (var key of source) {
+                var value = source[key];
+                if (key instanceof Array) {
+                    [key, value] = key;
+                }
+                output[key] = everyValue(key, value, source);
+            }
+
+        } else if (source.forEach != null) {
+            source.forEach((k, v) => {
+                output[key] = everyValue(key, source[key], source);
+            });
+
+        } else if (source.each != null) {
+            source.each((k, v) => {
+                output[key] = everyValue(key, source[key], source);
+            });
+
+        } else {
+            for (var key in source) {
+                output[key] = everyValue(key, source[key], source);
+            }
+        }
+
+        return output;
+    }
+
 
     /**
      * @param key

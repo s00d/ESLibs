@@ -1,59 +1,5 @@
-import Str from "/Support/Str";
-import EventObject from "/Events/EventObject";
-
-/**
- * Fired event
- */
-class FiredEvent {
-    /**
-     * @type {string}
-     * @private
-     */
-    _name = '';
-
-    /**
-     * @type {string}
-     * @private
-     */
-    _originalName = '';
-
-    /**
-     * @type {Array}
-     * @private
-     */
-    _args = [];
-
-    /**
-     * @param {string} name
-     * @param {Array} args
-     */
-    constructor(name, ...args) {
-        this._originalName = name;
-        this._name = Str.studlyCase(name);
-        this._args = args;
-    }
-
-    /**
-     * @returns {string}
-     */
-    get name() : string {
-        return this._name;
-    }
-
-    /**
-     * @returns {*}
-     */
-    get args() : Array {
-        return this._args;
-    }
-
-    /**
-     * @returns {string}
-     */
-    [Symbol.toPrimitive] () {
-        return 'Event ' + this.name;
-    }
-}
+import {default as FiredEvent} from "/Events/Event";
+import {default as Listener} from "/Events/EventListener";
 
 /**
  * Event Dispatcher
@@ -69,11 +15,11 @@ export default class Dispatcher {
     /**
      * @param name
      * @param callback
-     * @returns {EventObject}
+     * @returns {Listener}
      */
     listen(name:String, callback:Function) {
-        var event = new EventObject(this, name, callback);
-        this.getHandlers(name).push(event);
+        var event = new Listener(this, name, callback);
+        this._getHandlers(name).push(event);
 
         return event;
     }
@@ -81,7 +27,7 @@ export default class Dispatcher {
     /**
      * @param name
      * @param callback
-     * @returns {Event}
+     * @returns {Listener}
      */
     once(name:String, callback:Function) {
         return this.listen(name, callback).once();
@@ -104,28 +50,28 @@ export default class Dispatcher {
      * @returns {boolean}
      */
     fire(name:String, ...args) {
-        this.getHandlers(name);
+        this._getHandlers(name);
 
-        var handlers = this.getCompatibleEvents(name);
+        var handlers = this._getCompatibleEvents(name);
         var result   = args;
 
         for (var i = 0; i < handlers.length; i++) {
-            var eventResult = handlers[i].fire(...(result.concat([name])));
-            if (eventResult === false) {
-                return false;
-            } else if (typeof eventResult !== 'undefined') {
-                result = eventResult;
-            }
+            let event = args.length === 1 && args[0] instanceof FiredEvent
+                ? args[0]
+                : new FiredEvent(name, args);
+
+            handlers[i].fire(event);
         }
 
         return result.length === 1 ? result[0] : result;
     }
 
     /**
-     * @param name
-     * @returns {*}
+     * @param {string} name
+     * @returns {Array}
+     * @private
      */
-    getHandlers(name) {
+    _getHandlers(name:string):Array {
         if (!this.events[name]) {
             this.events[name] = [];
         }
@@ -136,12 +82,13 @@ export default class Dispatcher {
     /**
      * @param name
      * @returns {Array}
+     * @private
      */
-    getCompatibleEvents(name) {
+    _getCompatibleEvents(name) {
         var compatible = [];
 
         Object.keys(this.events).forEach(event => {
-            var regexp = Dispatcher.createHandlerNameRegexp(event);
+            var regexp = Dispatcher._createHandlerNameRegexp(event);
             if (name.match(regexp)) {
                 compatible = compatible.concat(this.events[event]);
             }
@@ -154,7 +101,7 @@ export default class Dispatcher {
      * @param name
      * @returns {RegExp}
      */
-    static createHandlerNameRegexp(name) {
+    static _createHandlerNameRegexp(name) {
         name = name
             .replace(/[\-\[\]\/\{\}\(\)\+\?\.\\\^\$\|]/g, "\\$&")
             .replace('*', '(.*?)');

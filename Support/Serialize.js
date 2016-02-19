@@ -1,3 +1,8 @@
+import Obj from "/Support/Std/Obj";
+import {toJson as JsonableKey} from "/Support/Interfaces/Jsonable";
+import {toObject as SerializableKey} from "/Support/Interfaces/Serializable";
+
+
 export default class Serialize {
     /**
      * @param value
@@ -7,49 +12,50 @@ export default class Serialize {
         if (typeof(value) === 'number') {
             return value.toString();
         }
-        var result = this.toStructure(value);
+        var result = this.toObject(value);
         return result ? result.toString() : '';
     }
 
     /**
-     * @param value
-     * @returns {String}
+     * @param {Object} target
+     * @returns {string}
      */
-    static toJson(value) {
-        return JSON.stringify(
-            this.toStructure(value)
-        );
+    static toJson(target:Object) : string {
+        if (!target[JsonableKey]) {
+            return JSON.stringify(this.toObject(target));
+        }
+        return JSON.stringify(this._parse(target, JsonableKey));
     }
 
     /**
-     * @param value
+     * @param {Object} target
      * @returns {*}
      */
-    static toStructure(value) {
-        var result = value;
+    static toObject(target:Object) : Object {
+        return this._parse(target, SerializableKey);
+    }
 
-        if (typeof value !== 'object' || value instanceof Array) {
-            result = value;
+    /**
+     * @param {Object} target
+     * @param {Symbol} symbol
+     * @returns {*}
+     * @private
+     */
+    static _parse(target:Object, symbol:Symbol) {
+        var result = {};
 
-        } else if (value != null && typeof value.toObject === 'function') {
-            result = value.toObject();
+        if (typeof target === 'object' && target[symbol] instanceof Function) {
+            result = Obj.map(target[symbol](), (key, value, s) => {
+                if (value instanceof Object) {
+                    return this._parse(value, symbol);
+                } else {
+                    return value;
+                }
+            });
 
-        } else if (value != null && typeof value.toArray === 'function') {
-            result = value.toArray();
-
-        } else if (value != null) {
-            if (value.name === 'Object') {
-                result = {};
-                for (var key in value) { result[key] = this.toStructure(value[key]); }
-            } else {
-                result = value.toString();
-            }
         } else {
-            result = value;
-        }
 
-        if (typeof result === 'function') {
-            return result();
+            return target;
         }
 
         return result;

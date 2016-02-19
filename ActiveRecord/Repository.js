@@ -1,7 +1,9 @@
 import Ajax from "/Request/Ajax";
+import Obj from "/Support/Std/Obj";
 import Inject from "/Container/Inject";
 import Model from "/ActiveRecord/Model";
 import Collection from "/Support/Collection";
+import {toObject} from "/Support/Interfaces/Serializable";
 
 /**
  *
@@ -54,7 +56,7 @@ class RepositoryResponse {
         if (this._response instanceof Array) {
             return this._response;
         }
-        return Object.values(this._response);
+        return [this._response];
     }
 
     /**
@@ -190,9 +192,7 @@ export default class Repository {
      * @returns {RepositoryResponse}
      */
     async save(model:Model, args = {}) {
-        return this.saveData(
-            Repository._mergeObjects(model.toObject(), args)
-        );
+        return this.saveData(Obj.merge(model[toObject](), args));
     }
 
     /**
@@ -209,9 +209,7 @@ export default class Repository {
      * @returns {*}
      */
     async destroy(model:Model, args = {}) {
-        return this.destroyData(
-            Repository._mergeObjects(model.toObject(), args)
-        );
+        return this.destroyData(Obj.merge(model[toObject](), args));
     }
 
     /**

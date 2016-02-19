@@ -1,6 +1,7 @@
-import Str from "/Support/Str";
-import Abstract from "/Support/Abstract";
+import Str from "/Support/Std/Str";
+import Abstract from "/Support/Access/Abstract";
 import DateTimeZone from "/DateTime/DateTimeZone";
+import {toObject} from "/Support/Interfaces/Serializable";
 import DateInterval, {TIME_HOUR, TIME_MINUTE} from "/DateTime/DateInterval";
 
 /*
@@ -398,16 +399,19 @@ export default class DateTime {
     }
 
     /**
-     * @returns {{time: string, zone: number}}
+     * @returns {string}
      */
-    toObject() {
-        return {
-            time: this.toIso8601String(),
-            zone: this.timezone
-        };
-    }
-
     [Symbol.toPrimitive]() {
         return this.toString();
+    }
+
+    /**
+     * @returns {{date: string, timezone: (DateTimeZone|number)}}
+     */
+    [toObject] () {
+        return {
+            date: this.toDateTimeString(),
+            timezone: this.timezone
+        };
     }
 }

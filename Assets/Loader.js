@@ -1,6 +1,6 @@
-import Arr from "/Support/Arr";
-import Abstract from "/Support/Abstract";
+import Arr from "/Support/Std/Arr";
 import Collection from "/Support/Collection";
+import Abstract from "/Support/Access/Abstract";
 
 /**
  * Asset

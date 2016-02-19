@@ -1,7 +1,7 @@
-import Str from "/Support/Str";
-import Arr from "/Support/Arr";
-import Obj from "/Support/Obj";
-import Regex from "/Support/Regex";
+import Regex from "/Support/Std/Regex";
+import Str from "/Support/Std/Str";
+import Arr from "/Support/Std/Arr";
+import Obj from "/Support/Std/Obj";
 import Dictionary from "/Translation/Dictionary";
 
 /**

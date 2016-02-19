@@ -1,9 +1,10 @@
-import Arr from "/Support/Arr";
+import Arr from "/Support/Std/Arr";
 import DateTime from "/DateTime/DateTime";
-import {bind} from "/Support/helpers";
-import Serialize from "/Support/Serialize";
 import Dispatcher from "/Events/Dispatcher";
 import Collection from "/Support/Collection";
+import Repository from "/Storage/Repository";
+import {toObject} from "/Support/Interfaces/Serializable";
+import MemoryAdapter from "/Storage/Adapters/MemoryAdapter";
 
 /**
  * Model
@@ -74,6 +75,23 @@ export default class Model {
             this._events.set(this, new Dispatcher);
         }
         return this._events.get(this);
+    }
+
+    /**
+     * @type {WeakMap}
+     */
+    static _cache = new WeakMap();
+
+    /**
+     * @returns {Repository}
+     */
+    static get cache() {
+        this.bootIfNotBooted();
+
+        if (!this._cache.has(this)) {
+            this._cache.set(this, new Repository(new MemoryAdapter('cache:')));
+        }
+        return this._cache.get(this);
     }
 
     /**
@@ -286,7 +304,7 @@ export default class Model {
 
             // Timestamps
             if (Arr.has(this.constructor.timestamps, field) && !(result instanceof DateTime)) {
-                result = DateTime.parse(result);
+                result = new DateTime(result);
 
                 this._attributes.set(field, result);
                 this._original.set(field, result);
@@ -294,6 +312,7 @@ export default class Model {
 
             return result;
         }
+
         return null;
     }
 
@@ -336,7 +355,7 @@ export default class Model {
      */
     only(...field) {
         var result = {};
-        var data = this.toObject();
+        var data = this[toObject]();
 
         for (var i = 0; i < field.length; i++) {
             var key = field[i];
@@ -354,7 +373,7 @@ export default class Model {
      */
     except(...field) {
         var result = {};
-        var data = this.toObject();
+        var data = this[toObject]();
 
         for (var key in data) {
             if (!Arr.has(field, key)) {
@@ -385,13 +404,11 @@ export default class Model {
     /**
      * @returns {{}}
      */
-    toObject() {
-        var result = {};
-
-        this._attributes.forEach((value, field) => {
-            result[field] = Serialize.toStructure(value);
+    [toObject]() {
+        var output = {};
+        Obj.each(this._attributes, (k, v) => {
+            output[k] = this.getAttribute(k);
         });
-
-        return result;
+        return output;
     }
 }

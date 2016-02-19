@@ -1,5 +1,6 @@
 import timezones from "/DateTime/timezones";
 import Collection from "/Support/Collection";
+import {toObject} from "/Support/Interfaces/Serializable";
 import {TIME_SECOND, TIME_MINUTE, TIME_HOUR} from "/DateTime/DateInterval";
 
 /**
@@ -107,13 +108,20 @@ export default class DateTimeZone {
      * @returns {number}
      */
     get minutes() {
-        return this._offset / TIME_SECOND;
+        return this._offset / TIME_MINUTE;
     }
 
     /**
      * @returns {number}
      */
     get hours() {
-        return this._offset / TIME_MINUTE;
+        return this._offset / TIME_HOUR;
+    }
+
+    /**
+     * @returns {{offset: number}}
+     */
+    [toObject]() {
+        return {offset: this.minutes};
     }
 }

@@ -1,4 +1,4 @@
-import Abstract from "/Support/Abstract";
+import Abstract from "/Support/Access/Abstract";
 
 /**
  * Abstract timer
