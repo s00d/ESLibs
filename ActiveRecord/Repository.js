@@ -231,7 +231,10 @@ export default class Repository {
         var data       = this.getRoute(route);
         options.method = data.method || 'get';
 
+        
         var result = await (await ajax.request(data.url, args, options)).json();
+
+
 
         return new RepositoryResponse(this.model, result);
     }

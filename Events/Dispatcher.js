@@ -1,5 +1,5 @@
-import {default as FiredEvent} from "/Events/Event";
-import {default as Listener} from "/Events/EventListener";
+import {default as FiredEvent} from '/Events/Event';
+import {default as Listener} from '/Events/EventListener';
 
 /**
  * Event Dispatcher
@@ -93,6 +93,14 @@ export default class Dispatcher {
         }
 
         return this.events[name];
+    }
+
+    /**
+     * @param name
+     * @returns {Array}
+     */
+    getHandlers(name:string):Array {
+        return this._getHandlers(name);
     }
 
     /**
